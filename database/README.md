@@ -1,0 +1,1 @@
+Database - Firebase Schema & Configuration
