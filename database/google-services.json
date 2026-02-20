@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "468862639029",
+    "project_id": "grideye-a8ced",
+    "storage_bucket": "grideye-a8ced.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:468862639029:android:c193e5a9feadb9a35157fc",
+        "android_client_info": {
+          "package_name": "com.example.grideye_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAObM2cyUwTqRT7zTfpuQyMp4ukuYuTpyI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
