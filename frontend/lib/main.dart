@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart'; // Ye line lazmi add karein
+import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'splash_screen.dart';
 import 'admin_dashboard.dart';
 
-void main() {
+void main() async {
+  // Firebase initialization
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(); 
   runApp(GridEyeApp());
 }
 
@@ -16,7 +21,6 @@ class GridEyeApp extends StatelessWidget {
       theme: ThemeData(
         brightness: Brightness.dark,
         primaryColor: Color(0xFF0D1B2A),
-        // Poori app ke liye Montserrat font set kar diya
         textTheme: GoogleFonts.montserratTextTheme(
           ThemeData.dark().textTheme,
         ),
@@ -25,111 +29,99 @@ class GridEyeApp extends StatelessWidget {
       routes: {
         '/': (context) => SplashScreen(),
         '/login': (context) => GridEyeLogin(),
-        '/roleSelection': (context) => RoleSelectionScreen(), // Nayi screen ka rasta
+        '/roleSelection': (context) => RoleSelectionScreen(),
         '/adminDashboard': (context) => AdminDashboard(),
       },
     );
   }
 }
 
-// Temporary Placeholder
-class GridEyeLogin extends StatelessWidget {
+// ==========================================
+// LOGIN SCREEN
+// ==========================================
+class GridEyeLogin extends StatefulWidget {
+  @override
+  _GridEyeLoginState createState() => _GridEyeLoginState();
+}
+
+class _GridEyeLoginState extends State<GridEyeLogin> {
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  bool _isLoading = false;
+
+  Future<void> _handleLogin() async {
+    setState(() => _isLoading = true);
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+      // Login successful, navigate to role selection
+      Navigator.pushReplacementNamed(context, '/roleSelection');
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Login Failed: ${e.toString()}"), backgroundColor: Colors.red),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFF0D1B2A), // Midnight Navy Background
+      backgroundColor: Color(0xFF0D1B2A),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 30.0, vertical: 80.0),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Logo
               Image.asset('assets/images/logo.png', width: 150),
               SizedBox(height: 20),
-              
-              // App Name with Professional Font Style
-              Text(
-                "GridEye",
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF00E5FF), // Neon Teal
-                  letterSpacing: 2,
-                ),
-              ),
-              Text(
-                "Smart Grid Monitoring System",
-                style: TextStyle(color: Colors.white70, fontSize: 14),
-              ),
+              Text("GridEye", style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF00E5FF), letterSpacing: 2)),
+              Text("Smart Grid Monitoring System", style: TextStyle(color: Colors.white70, fontSize: 14)),
               SizedBox(height: 60),
 
               // Email Field
               TextField(
+                controller: _emailController,
                 decoration: InputDecoration(
                   prefixIcon: Icon(Icons.email_outlined, color: Color(0xFF00E5FF)),
                   hintText: 'Corporate Email',
                   filled: true,
                   fillColor: Colors.white.withOpacity(0.05),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(15),
-                    borderSide: BorderSide.none,
-                  ),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
                 ),
               ),
               SizedBox(height: 20),
 
               // Password Field
               TextField(
+                controller: _passwordController,
                 obscureText: true,
                 decoration: InputDecoration(
                   prefixIcon: Icon(Icons.lock_outline, color: Color(0xFF00E5FF)),
                   hintText: 'Password',
                   filled: true,
                   fillColor: Colors.white.withOpacity(0.05),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(15),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-              ),
-              
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {},
-                  child: Text("Forgot Password?", style: TextStyle(color: Colors.white54)),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
                 ),
               ),
               SizedBox(height: 30),
 
-              // Professional Login Button
-              Container(
-                width: double.infinity,
-                height: 55,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(15),
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF00E5FF), Color(0xFF008CAB)],
+              // Login Button
+              GestureDetector(
+                onTap: _isLoading ? null : _handleLogin,
+                child: Container(
+                  width: double.infinity, height: 55,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(15),
+                    gradient: LinearGradient(colors: [Color(0xFF00E5FF), Color(0xFF008CAB)]),
                   ),
-                ),
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.transparent,
-                    shadowColor: Colors.transparent,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                  ),
-                  onPressed: () {
-                    // Yahan hum kal Role Selection logic daalein ge
-                   Navigator.pushNamed(context, '/roleSelection');
-                  },
-                  child: Text(
-                    "LOGIN",
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  child: Center(
+                    child: _isLoading 
+                      ? CircularProgressIndicator(color: Colors.black)
+                      : Text("LOGIN", style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ),
@@ -141,6 +133,9 @@ class GridEyeLogin extends StatelessWidget {
   }
 }
 
+// ==========================================
+// ROLE SELECTION SCREEN
+// ==========================================
 class RoleSelectionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -153,7 +148,7 @@ class RoleSelectionScreen extends StatelessWidget {
           children: [
             Text(
               "Identify Your Role",
-              style: GoogleFonts.orbitron( // Heading ke liye futuristic font
+              style: GoogleFonts.orbitron(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF00E5FF),
@@ -174,8 +169,8 @@ class RoleSelectionScreen extends StatelessWidget {
               subtitle: "Monitor Grid & Theft Alerts",
               icon: Icons.admin_panel_settings_outlined,
               onTap: () {
-              Navigator.pushNamed(context, '/adminDashboard');
-                        },
+                Navigator.pushReplacementNamed(context, '/adminDashboard');
+              },
             ),
             
             SizedBox(height: 20),
