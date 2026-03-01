@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart'; // Ye line lazmi add karein
 import 'splash_screen.dart';
+import 'admin_dashboard.dart';
 
 void main() {
   runApp(GridEyeApp());
@@ -25,6 +26,7 @@ class GridEyeApp extends StatelessWidget {
         '/': (context) => SplashScreen(),
         '/login': (context) => GridEyeLogin(),
         '/roleSelection': (context) => RoleSelectionScreen(), // Nayi screen ka rasta
+        '/adminDashboard': (context) => AdminDashboard(),
       },
     );
   }
@@ -171,7 +173,9 @@ class RoleSelectionScreen extends StatelessWidget {
               title: "Utility Admin",
               subtitle: "Monitor Grid & Theft Alerts",
               icon: Icons.admin_panel_settings_outlined,
-              onTap: () => print("Admin Dashboard"),
+              onTap: () {
+              Navigator.pushNamed(context, '/adminDashboard');
+                        },
             ),
             
             SizedBox(height: 20),
