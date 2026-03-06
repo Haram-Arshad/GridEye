@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart'; // Map ki library
+import 'package:google_maps_flutter/google_maps_flutter.dart'; 
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AdminDashboard extends StatefulWidget {
   @override
@@ -8,7 +9,6 @@ class AdminDashboard extends StatefulWidget {
 }
 
 class _AdminDashboardState extends State<AdminDashboard> {
-  // Map ki initial position (Example: Karachi)
   static const CameraPosition _initialLocation = CameraPosition(
     target: LatLng(24.8607, 67.0011),
     zoom: 12.0,
@@ -36,9 +36,24 @@ class _AdminDashboardState extends State<AdminDashboard> {
             
             Row(
               children: [
-                _buildStatCard("Active Grids", "12", Icons.bolt, Colors.greenAccent),
+                // --- LIVE ACTIVE GRIDS ---
+                StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance.collection('MeterReadings').snapshots(),
+                  builder: (context, snapshot) {
+                    String count = snapshot.hasData ? snapshot.data!.docs.length.toString().padLeft(2, '0') : "--";
+                    return _buildStatCard("Active Grids", count, Icons.bolt, Colors.greenAccent);
+                  },
+                ),
                 SizedBox(width: 15),
-                _buildStatCard("Theft Alerts", "03", Icons.warning, Colors.redAccent),
+                
+                // --- LIVE THEFT ALERTS ---
+                StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance.collection('Alerts').snapshots(),
+                  builder: (context, snapshot) {
+                    String count = snapshot.hasData ? snapshot.data!.docs.length.toString().padLeft(2, '0') : "--";
+                    return _buildStatCard("Theft Alerts", count, Icons.warning, Colors.redAccent);
+                  },
+                ),
               ],
             ),
             
@@ -46,7 +61,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
             Text("Live Geospatial Feed", style: TextStyle(color: Colors.white70, fontSize: 16)),
             SizedBox(height: 10),
             
-            // --- ACTUAL GOOGLE MAP REPLACEMENT ---
             Expanded(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(20),
@@ -56,10 +70,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   ),
                   child: GoogleMap(
                     initialCameraPosition: _initialLocation,
-                    mapType: MapType.normal, // Aap MapType.hybrid bhi kar sakti hain
-                    onMapCreated: (GoogleMapController controller) {
-                      // Map load hone par agar koi logic lagani ho
-                    },
+                    mapType: MapType.normal,
+                    onMapCreated: (GoogleMapController controller) {},
                     markers: {
                       Marker(
                         markerId: MarkerId('grid_1'),
