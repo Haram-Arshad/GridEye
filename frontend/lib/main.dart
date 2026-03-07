@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'splash_screen.dart';
 import 'admin_dashboard.dart';
+import 'consumer_portal.dart';
 
 void main() async {
   // Firebase initialization
@@ -31,6 +32,8 @@ class GridEyeApp extends StatelessWidget {
         '/login': (context) => GridEyeLogin(),
         '/roleSelection': (context) => RoleSelectionScreen(),
         '/adminDashboard': (context) => AdminDashboard(),
+        // Naya route add karein (Abhi screen nahi bani isliye placeholder rakhein)
+        '/consumerDashboard': (context) => ConsumerPortal(), 
       },
     );
   }
@@ -176,12 +179,15 @@ class RoleSelectionScreen extends StatelessWidget {
             SizedBox(height: 20),
             
             // Consumer Card
+            // Consumer Card
             _buildRoleCard(
               context,
               title: "Consumer Portal",
               subtitle: "View Usage & Report Faults",
               icon: Icons.bolt_outlined,
-              onTap: () => print("Consumer Dashboard"),
+              onTap: () {
+                Navigator.pushReplacementNamed(context, '/consumerDashboard');
+              },
             ),
           ],
         ),
