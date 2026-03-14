@@ -52,3 +52,6 @@ if anomaly:
 
 else:
     print("No Anomaly Detected")
+
+
+# Model Accuracy = 0.04    
