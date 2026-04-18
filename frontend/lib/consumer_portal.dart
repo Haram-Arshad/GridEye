@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'usage_history.dart';
+import 'profile_screen.dart'; // Import profile screen
 
 class ConsumerPortal extends StatelessWidget {
   @override
@@ -11,8 +12,17 @@ class ConsumerPortal extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text("My GridEye", style: GoogleFonts.orbitron(color: const Color(0xFF00E5FF), fontSize: 18)),
-        centerTitle: true,
+    
+        centerTitle: false,
         actions: [
+          // --- PROFILE BUTTON ADDED HERE ---
+          IconButton(
+            icon: const Icon(Icons.account_circle_outlined, color: Colors.white70),
+            tooltip: 'My Profile',
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => ProfileScreen()));
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.logout_rounded, color: Colors.white70),
             onPressed: () => Navigator.pushReplacementNamed(context, '/roleSelection'),
@@ -109,45 +119,44 @@ class ConsumerPortal extends StatelessWidget {
   }
 
   void _showReportDialog(BuildContext context) {
-  showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      backgroundColor: const Color(0xFF1B263B), // Darker Navy
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: Text(
-        "Report Fault", 
-        style: GoogleFonts.orbitron(color: const Color(0xFF00E5FF), fontSize: 18)
-      ),
-      content: const Text(
-        "Are you sure you want to report a power fault? Admin will be notified immediately.", 
-        style: TextStyle(color: Colors.white70)
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context), 
-          child: const Text("CANCEL", style: TextStyle(color: Colors.white54))
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1B263B),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          "Report Fault", 
+          style: GoogleFonts.orbitron(color: const Color(0xFF00E5FF), fontSize: 18)
         ),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF00E5FF), // Cyan match
-            foregroundColor: Colors.black,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            elevation: 5,
+        content: const Text(
+          "Are you sure you want to report a power fault? Admin will be notified immediately.", 
+          style: TextStyle(color: Colors.white70)
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context), 
+            child: const Text("CANCEL", style: TextStyle(color: Colors.white54))
           ),
-          onPressed: () {
-            // Future logic for Haram: Save to Firestore
-            Navigator.pop(context);
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text("Fault Reported Successfully!"),
-                backgroundColor: Color(0xFF00E5FF),
-              )
-            );
-          },
-          child: const Text("REPORT", style: TextStyle(fontWeight: FontWeight.bold)),
-        ),
-      ],
-    ),
-  );
-}
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF00E5FF),
+              foregroundColor: Colors.black,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              elevation: 5,
+            ),
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text("Fault Reported Successfully!"),
+                  backgroundColor: Color(0xFF00E5FF),
+                )
+              );
+            },
+            child: const Text("REPORT", style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
 }
