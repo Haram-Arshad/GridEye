@@ -136,12 +136,17 @@ stream: FirebaseFirestore.instance
 ),
           // 3. Logout/Switch Role Button
           IconButton(
-            icon: const Icon(Icons.logout_rounded, color: Colors.white70),
-            tooltip: 'Switch Role',
-            onPressed: () {
-              Navigator.pushReplacementNamed(context, '/roleSelection');
-            },
-          ),
+  icon: const Icon(Icons.logout_rounded, color: Colors.white70), // Aapki original UI
+  onPressed: () {
+  if (Navigator.canPop(context)) {
+    // Ye aapko wapis Role Selection par le jayega
+    Navigator.pop(context); 
+  } else {
+    // Agar koi direct login hai (multi nahi hai), toh login par jaye
+    Navigator.pushReplacementNamed(context, '/login');
+  }
+},
+),
         ],
       ),
       body: Padding(

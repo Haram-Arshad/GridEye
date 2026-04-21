@@ -27,11 +27,21 @@ class _AlertCenterState extends State<AlertCenter> {
     return Scaffold(
       backgroundColor: const Color(0xFF0D1B2A),
       appBar: AppBar(
-        title: Text(
-          widget.showOnlyUnread ? 'NEW NOTIFICATIONS' : 'THEFT ARCHIVE',
-          style: GoogleFonts.orbitron(
-              fontSize: 14, color: Colors.white, letterSpacing: 1.2),
-        ),
+        // Line 38: Text widget ko ShaderMask se wrap karein
+title: ShaderMask(
+  shaderCallback: (bounds) => const LinearGradient(
+    colors: [Color(0xFF00E5FF), Color(0xFF008CAB)],
+  ).createShader(bounds),
+  child: Text(
+    widget.showOnlyUnread ? 'NEW NOTIFICATIONS' : 'THEFT ARCHIVE',
+    style: GoogleFonts.orbitron(
+      fontSize: 16, // Thora bara size
+      fontWeight: FontWeight.normal, 
+      color: Colors.white, 
+      letterSpacing: 1.5
+    ),
+  ),
+),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: false,
@@ -51,10 +61,6 @@ class _AlertCenterState extends State<AlertCenter> {
           }
 
           // ── KEY FIX 1 ──────────────────────────────────────────
-          // Sirf pehli baar lock karo. Baad ke stream updates
-          // _lockedDocs ko kabhi nahi badlenge.
-          // Notification screen: sirf isRead:false wale lock honge
-          // Archive screen: sab lock honge
           // ────────────────────────────────────────────────────────
           if (snapshot.hasData && _lockedDocs == null) {
             final allDocs = snapshot.data!.docs;

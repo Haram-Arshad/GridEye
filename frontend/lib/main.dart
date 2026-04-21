@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Firestore import add kiya
 import 'splash_screen.dart';
 import 'admin_dashboard.dart';
 import 'consumer_portal.dart';
+import 'meter_id_input.dart'; // Ye line lazmi add karein
 
 void main() async {
-  // Firebase initialization
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(); 
   runApp(GridEyeApp());
@@ -21,7 +22,7 @@ class GridEyeApp extends StatelessWidget {
       title: 'GridEye',
       theme: ThemeData(
         brightness: Brightness.dark,
-        primaryColor: Color(0xFF0D1B2A),
+        primaryColor: const Color(0xFF0D1B2A),
         textTheme: GoogleFonts.montserratTextTheme(
           ThemeData.dark().textTheme,
         ),
@@ -30,10 +31,8 @@ class GridEyeApp extends StatelessWidget {
       routes: {
         '/': (context) => SplashScreen(),
         '/login': (context) => GridEyeLogin(),
-        '/roleSelection': (context) => RoleSelectionScreen(),
         '/adminDashboard': (context) => AdminDashboard(),
-        // Naya route add karein (Abhi screen nahi bani isliye placeholder rakhein)
-        '/consumerDashboard': (context) => ConsumerPortal(), 
+        // Note: consumerDashboard aur roleSelection ab dynamic Navigator se chalenge
       },
     );
   }
@@ -55,12 +54,38 @@ class _GridEyeLoginState extends State<GridEyeLogin> {
   Future<void> _handleLogin() async {
     setState(() => _isLoading = true);
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
+      // 1. Auth Login
+      UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
-      // Login successful, navigate to role selection
-      Navigator.pushReplacementNamed(context, '/roleSelection');
+
+      // 2. Fetch User Data from Firestore using UID
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userCredential.user!.uid)
+          .get();
+
+// main.dart ke andar _handleLogin function mein:
+if (userDoc.exists) {
+  String role = userDoc['role'] ?? "consumer";
+  String mID = userDoc['meterID'] ?? "";
+
+  if (role == 'multi') {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => RoleSelectionScreen(meterID: mID)),
+    );
+  } else if (role == 'admin') {
+    Navigator.pushReplacementNamed(context, '/adminDashboard');
+  } else {
+    // AB YE CHANGE KAREIN: Direct portal ki jagah Input screen par bhejain
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => MeterIdInputScreen()), 
+    );
+  }
+}
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Login Failed: ${e.toString()}"), backgroundColor: Colors.red),
@@ -73,58 +98,55 @@ class _GridEyeLoginState extends State<GridEyeLogin> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFF0D1B2A),
+      backgroundColor: const Color(0xFF0D1B2A),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 30.0, vertical: 80.0),
           child: Column(
             children: [
               Image.asset('assets/images/logo.png', width: 150),
-              SizedBox(height: 20),
-              Text("GridEye", style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF00E5FF), letterSpacing: 2)),
-              Text("Smart Grid Monitoring System", style: TextStyle(color: Colors.white70, fontSize: 14)),
-              SizedBox(height: 60),
+              const SizedBox(height: 20),
+              const Text("GridEye", style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF00E5FF), letterSpacing: 2)),
+              const Text("Smart Grid Monitoring System", style: TextStyle(color: Colors.white70, fontSize: 14)),
+              const SizedBox(height: 60),
 
-              // Email Field
               TextField(
                 controller: _emailController,
                 decoration: InputDecoration(
-                  prefixIcon: Icon(Icons.email_outlined, color: Color(0xFF00E5FF)),
+                  prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFF00E5FF)),
                   hintText: 'Corporate Email',
                   filled: true,
                   fillColor: Colors.white.withOpacity(0.05),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
                 ),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-              // Password Field
               TextField(
                 controller: _passwordController,
                 obscureText: true,
                 decoration: InputDecoration(
-                  prefixIcon: Icon(Icons.lock_outline, color: Color(0xFF00E5FF)),
+                  prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF00E5FF)),
                   hintText: 'Password',
                   filled: true,
                   fillColor: Colors.white.withOpacity(0.05),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
                 ),
               ),
-              SizedBox(height: 30),
+              const SizedBox(height: 30),
 
-              // Login Button
               GestureDetector(
                 onTap: _isLoading ? null : _handleLogin,
                 child: Container(
                   width: double.infinity, height: 55,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(15),
-                    gradient: LinearGradient(colors: [Color(0xFF00E5FF), Color(0xFF008CAB)]),
+                    gradient: const LinearGradient(colors: [Color(0xFF00E5FF), Color(0xFF008CAB)]),
                   ),
                   child: Center(
                     child: _isLoading 
-                      ? CircularProgressIndicator(color: Colors.black)
-                      : Text("LOGIN", style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold)),
+                      ? const CircularProgressIndicator(color: Colors.black)
+                      : const Text("LOGIN", style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ),
@@ -140,10 +162,13 @@ class _GridEyeLoginState extends State<GridEyeLogin> {
 // ROLE SELECTION SCREEN
 // ==========================================
 class RoleSelectionScreen extends StatelessWidget {
+  final String meterID; // MeterID receive karne ke liye
+  RoleSelectionScreen({required this.meterID});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFF0D1B2A),
+      backgroundColor: const Color(0xFF0D1B2A),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 25.0),
         child: Column(
@@ -154,41 +179,42 @@ class RoleSelectionScreen extends StatelessWidget {
               style: GoogleFonts.orbitron(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF00E5FF),
+                color: const Color(0xFF00E5FF),
                 letterSpacing: 1.5,
               ),
             ),
-            SizedBox(height: 10),
-            Text(
-              "Select access level to continue",
-              style: TextStyle(color: Colors.white54),
-            ),
-            SizedBox(height: 50),
+            const SizedBox(height: 10),
+            const Text("Select access level to continue", style: TextStyle(color: Colors.white54)),
+            const SizedBox(height: 50),
             
-            // Utility Admin Card
-            _buildRoleCard(
-              context,
-              title: "Utility Admin",
-              subtitle: "Monitor Grid & Theft Alerts",
-              icon: Icons.admin_panel_settings_outlined,
-              onTap: () {
-                Navigator.pushReplacementNamed(context, '/adminDashboard');
-              },
-            ),
-            
-            SizedBox(height: 20),
-            
-            // Consumer Card
-            // Consumer Card
-            _buildRoleCard(
-              context,
-              title: "Consumer Portal",
-              subtitle: "View Usage & Report Faults",
-              icon: Icons.bolt_outlined,
-              onTap: () {
-                Navigator.pushReplacementNamed(context, '/consumerDashboard');
-              },
-            ),
+           // Admin Card
+// Admin Card
+_buildRoleCard(
+  context,
+  title: "Utility Admin",
+  subtitle: "Monitor Grid & Theft Alerts", // Ye line miss thi
+  icon: Icons.admin_panel_settings_outlined, // Ye line miss thi
+  onTap: () {
+    Navigator.pushNamed(context, '/adminDashboard');
+  },
+),
+
+const SizedBox(height: 20),
+
+// Consumer Card
+// main.dart ke RoleSelectionScreen mein:
+_buildRoleCard(
+  context,
+  title: "Consumer Portal",
+  subtitle: "View Usage & Report Faults",
+  icon: Icons.bolt_outlined,
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => MeterIdInputScreen()), // Ab yahan bhejain
+    );
+  },
+),
           ],
         ),
       ),
@@ -200,29 +226,29 @@ class RoleSelectionScreen extends StatelessWidget {
       onTap: onTap,
       child: Container(
         width: double.infinity,
-        padding: EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.05),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Color(0xFF00E5FF).withOpacity(0.2)),
+          border: Border.all(color: const Color(0xFF00E5FF).withOpacity(0.2)),
         ),
         child: Row(
           children: [
             CircleAvatar(
-              backgroundColor: Color(0xFF00E5FF).withOpacity(0.1),
+              backgroundColor: const Color(0xFF00E5FF).withOpacity(0.1),
               radius: 30,
-              child: Icon(icon, color: Color(0xFF00E5FF), size: 30),
+              child: Icon(icon, color: const Color(0xFF00E5FF), size: 30),
             ),
-            SizedBox(width: 20),
+            const SizedBox(width: 20),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                Text(subtitle, style: TextStyle(color: Colors.white54, fontSize: 12)),
+                Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Text(subtitle, style: const TextStyle(color: Colors.white54, fontSize: 12)),
               ],
             ),
-            Spacer(),
-            Icon(Icons.arrow_forward_ios, color: Colors.white24, size: 16),
+            const Spacer(),
+            const Icon(Icons.arrow_forward_ios, color: Colors.white24, size: 16),
           ],
         ),
       ),
