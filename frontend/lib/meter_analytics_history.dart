@@ -51,7 +51,6 @@ class MeterAnalyticsHistory extends StatelessWidget {
                 if (val is num) {
                   sumLoad += val.toDouble();
                 } else if (val is String) {
-                  // Agar ghalti se String ho to convert karo
                   sumLoad += double.tryParse(val) ?? 0.0;
                 }
               }
@@ -117,7 +116,7 @@ class MeterAnalyticsHistory extends StatelessWidget {
     );
   }
 
-  // UI Components (Same as before)
+  // UI Components
   Widget _buildMeterHeader(String id, String loc) {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -184,7 +183,15 @@ class MeterAnalyticsHistory extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    // ✅ FIX: Flexible prevents long title from overflowing into timestamp
+                    Flexible(
+                      child: Text(
+                        title,
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
                     Text(time, style: const TextStyle(color: Colors.white30, fontSize: 10)),
                   ],
                 ),

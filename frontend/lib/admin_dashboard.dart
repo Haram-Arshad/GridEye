@@ -39,8 +39,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 (data['lng'] as num).toDouble()
               ),
               icon: BitmapDescriptor.defaultMarkerWithHue(
-                data['status'] == 'Theft' ? BitmapDescriptor.hueRed : BitmapDescriptor.hueAzure
-              ),
+  data['status'] == 'Theft' 
+      ? BitmapDescriptor.hueRed 
+      : (data['status'] == 'Fault' 
+          ? BitmapDescriptor.hueOrange // Faults ke liye Orange pin
+          : BitmapDescriptor.hueAzure)  // Normal ke liye Blue/Azure pin
+),
               infoWindow: InfoWindow(
                 title: "Meter: ${data['meterId'] ?? 'Unknown'}",
                 snippet: "Load: ${data['currentLoad'] ?? '0'} kW",
@@ -63,7 +67,30 @@ class _AdminDashboardState extends State<AdminDashboard> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: false, // Consistency with Profile Screen
-        title: Text("GridEye Admin", style: GoogleFonts.orbitron(color: const Color(0xFF00E5FF), fontSize: 18)),
+        title: RichText(
+  text: TextSpan(
+    children: [
+      TextSpan(
+        text: 'GRID',
+        style: GoogleFonts.orbitron(
+          fontSize: 18,
+          fontWeight: FontWeight.w800,
+          color: Colors.white,
+          letterSpacing: 3,
+        ),
+      ),
+      TextSpan(
+        text: 'EYE',
+        style: GoogleFonts.orbitron(
+          fontSize: 18,
+          fontWeight: FontWeight.w800,
+          color: const Color(0xFF00E5FF),
+          letterSpacing: 3,
+        ),
+      ),
+    ],
+  ),
+),
         actions: [
           // 1. Profile Button
           IconButton(
@@ -158,31 +185,43 @@ stream: FirebaseFirestore.instance
             const SizedBox(height: 20),
             
             Row(
-              children: [
-                StreamBuilder<QuerySnapshot>(
-                  stream: FirebaseFirestore.instance.collection('MeterReadings').snapshots(),
-                  builder: (context, snapshot) {
-                    String count = snapshot.hasData ? snapshot.data!.docs.length.toString().padLeft(2, '0') : "--";
-                    return _buildStatCard("Active Grids", count, Icons.bolt, Colors.greenAccent);
-                  },
-                ),
-               const SizedBox(width: 15),
-StreamBuilder<QuerySnapshot>(
-  // Yahan humne .where filter add kiya hai jo sirf 'Theft' status wale docs uthayega
-  stream: FirebaseFirestore.instance
-      .collection('Alerts')
-      .where('status', isEqualTo: 'Theft') 
-      .snapshots(),
-  builder: (context, snapshot) {
-    // Debugging ke liye: Agar card empty ho jaye toh check karein spelling 'Theft' hi hai na
-    if (snapshot.hasError) return _buildStatCard("Theft Alerts", "Err", Icons.warning, Colors.redAccent);
-    
-    String count = snapshot.hasData ? snapshot.data!.docs.length.toString().padLeft(2, '0') : "00";
-    return _buildStatCard("Theft Alerts", count, Icons.warning, Colors.redAccent);
-  },
+  children: [
+    // 1. Active Grids Card (Total Meters)
+    StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('MeterReadings').snapshots(),
+      builder: (context, snapshot) {
+        String count = snapshot.hasData ? snapshot.data!.docs.length.toString().padLeft(2, '0') : "00";
+        return _buildStatCard("Active Grids", count, Icons.bolt, Colors.greenAccent);
+      },
+    ),
+    const SizedBox(width: 10),
+
+    // 2. Theft Alerts Card
+    StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('Alerts')
+          .where('status', isEqualTo: 'Theft')
+          .snapshots(),
+      builder: (context, snapshot) {
+        String count = snapshot.hasData ? snapshot.data!.docs.length.toString().padLeft(2, '0') : "00";
+        return _buildStatCard("Theft Alerts", count, Icons.warning, Colors.redAccent);
+      },
+    ),
+    const SizedBox(width: 10),
+
+    // 3. NEW: Fault Alerts Card
+    StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('Alerts')
+          .where('status', isEqualTo: 'Fault')
+          .snapshots(),
+      builder: (context, snapshot) {
+        String count = snapshot.hasData ? snapshot.data!.docs.length.toString().padLeft(2, '0') : "00";
+        return _buildStatCard("Fault Alerts", count, Icons.build_circle_outlined, Colors.orangeAccent);
+      },
+    ),
+  ],
 ),
-              ],
-            ),
             
             const SizedBox(height: 25), 
 
