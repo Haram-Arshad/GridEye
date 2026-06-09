@@ -97,8 +97,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
             icon: const Icon(Icons.account_circle_outlined, color: Colors.white70),
             tooltip: 'My Profile',
             onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => ProfileScreen()));
-            },
+  Navigator.push(context,
+      MaterialPageRoute(builder: (context) => const ProfileScreen()));
+},
           ),
           // 2. Notifications Button (LOGIC: Recent/Unread Alerts Only)
         // Purana IconButton hata kar ye StreamBuilder wala logic paste karein

@@ -11,7 +11,7 @@ const _cyan    = Color(0xFF00E5FF);
 const _cyanDim = Color(0xFF008CAB);
 
 // ═══════════════════════════════════════════════════════════════
-// AlertCenter — 100% UNCHANGED
+// AlertCenter
 // ═══════════════════════════════════════════════════════════════
 class AlertCenter extends StatefulWidget {
   final bool showOnlyUnread;
@@ -213,7 +213,7 @@ class _AlertCenterState extends State<AlertCenter>
 }
 
 // ═══════════════════════════════════════════════════════════════
-// _PulseDot — UNCHANGED
+// PulseDot
 // ═══════════════════════════════════════════════════════════════
 class _PulseDot extends StatefulWidget {
   @override
@@ -268,7 +268,7 @@ class _PulseDotState extends State<_PulseDot>
 }
 
 // ═══════════════════════════════════════════════════════════════
-// _NotifCard — UNCHANGED
+// NotifCard 
 // ═══════════════════════════════════════════════════════════════
 class _NotifCard extends StatefulWidget {
   final QueryDocumentSnapshot doc;
@@ -406,7 +406,7 @@ class _NotifCardState extends State<_NotifCard>
 }
 
 // ═══════════════════════════════════════════════════════════════
-// _ArchiveCard — UNCHANGED
+// ArchiveCard 
 // ═══════════════════════════════════════════════════════════════
 class _ArchiveCard extends StatelessWidget {
   final QueryDocumentSnapshot doc;
@@ -497,7 +497,7 @@ class _ArchiveCard extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// _IconCircle & _TickBadge — UNCHANGED
+// _IconCircle & _TickBadge 
 // ═══════════════════════════════════════════════════════════════
 class _IconCircle extends StatelessWidget {
   final IconData icon;
@@ -537,11 +537,7 @@ class _TickBadge extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// METER DETAIL PAGE — UPDATED:
-//   1. AppBar → same style as Alert Archive
-//   2. Meter Scan Active card → animated eye logo (no text removed)
-//   3. Info tiles → staggered slide+fade entry
-//   4. Dynamic status (already existed, kept)
+// METER DETAIL PAGE 
 // ═══════════════════════════════════════════════════════════════
 class MeterDetailPage extends StatefulWidget {
   final QueryDocumentSnapshot alertData;

@@ -34,6 +34,7 @@ class GridEyeApp extends StatelessWidget {
         '/': (context) => SplashScreen(),
         '/login': (context) => GridEyeLogin(),
         '/adminDashboard': (context) => AdminDashboard(),
+        '/roleSelection': (context) => RoleSelectionScreen(meterID: ''),
       },
     );
   }

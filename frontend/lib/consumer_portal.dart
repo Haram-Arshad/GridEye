@@ -5,9 +5,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'usage_history.dart';
 import 'profile_screen.dart';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ANIMATED ACTION TILE — unchanged logic, same as before
-// ─────────────────────────────────────────────────────────────────────────────
+// --------------------
+// ANIMATED ACTION TILE 
+// --------------------
 class _AnimatedActionTile extends StatefulWidget {
   final IconData icon;
   final String title;
@@ -69,7 +69,8 @@ class _AnimatedActionTileState extends State<_AnimatedActionTile>
           decoration: BoxDecoration(
             color: const Color(0xFF0D1B2A),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: widget.accentColor.withOpacity(0.25), width: 1.2),
+            border: Border.all(
+                color: widget.accentColor.withOpacity(0.25), width: 1.2),
           ),
           child: Row(
             children: [
@@ -79,7 +80,8 @@ class _AnimatedActionTileState extends State<_AnimatedActionTile>
                 decoration: BoxDecoration(
                   color: widget.accentColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(11),
-                  border: Border.all(color: widget.accentColor.withOpacity(0.2), width: 1),
+                  border: Border.all(
+                      color: widget.accentColor.withOpacity(0.2), width: 1),
                 ),
                 child: Icon(widget.icon, color: widget.accentColor, size: 20),
               ),
@@ -91,7 +93,6 @@ class _AnimatedActionTileState extends State<_AnimatedActionTile>
                     Text(
                       widget.title,
                       style: TextStyle(
-                        // ── FONT: same family as card labels ──
                         color: widget.accentColor,
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
@@ -123,14 +124,22 @@ class _AnimatedActionTileState extends State<_AnimatedActionTile>
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// MAIN SCREEN
-// ─────────────────────────────────────────────────────────────────────────────
-class ConsumerPortal extends StatelessWidget {
+// ═══════════════════════════════════════════════════════
+// CONSUMER PORTAL — StatefulWidget
+// ═══════════════════════════════════════════════════════
+class ConsumerPortal extends StatefulWidget {
   final String meterID;
-  ConsumerPortal({required this.meterID});
+  const ConsumerPortal({super.key, required this.meterID});
 
-  // ── BUSINESS LOGIC — UNTOUCHED ─────────────────────────────────────────────
+  @override
+  State<ConsumerPortal> createState() => _ConsumerPortalState();
+}
+
+class _ConsumerPortalState extends State<ConsumerPortal> {
+  // Firestore se resolve hone wali real meterID store karenge
+  String _resolvedMeterID = '';
+
+  // ── Fault Report Logic ─────────────────────────────────
   Future<void> _sendFaultReport(
       BuildContext context, String mID, String faultType) async {
     try {
@@ -156,12 +165,17 @@ class ConsumerPortal extends StatelessWidget {
         return;
       }
 
+      // Clean fault type save karo
+      String cleanType = 'POWER_FAULT';
+      if (faultType.contains('NO LOAD'))   cleanType = 'NO_LOAD';
+      if (faultType.contains('HIGH LOAD')) cleanType = 'HIGH_LOAD';
+
       await FirebaseFirestore.instance.collection('Faults').add({
-        'meterID': mID,
-        'timestamp': FieldValue.serverTimestamp(),
-        'status': 'Pending',
+        'meterID':     mID,
+        'timestamp':   FieldValue.serverTimestamp(),
+        'status':      'Pending',
         'description': 'User reported outage manually.',
-        'type': faultType,
+        'type':        cleanType,
       });
 
       if (!context.mounted) return;
@@ -187,28 +201,34 @@ class ConsumerPortal extends StatelessWidget {
         backgroundColor: const Color(0xFF1B263B),
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text("System Alert",
-            style: GoogleFonts.orbitron(
-                color: const Color(0xFF00E5FF), fontSize: 18)),
+        title: Text(
+          "System Alert",
+          style: GoogleFonts.orbitron(
+              color: const Color(0xFF00E5FF), fontSize: 18),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Detected Issue: $currentType",
-                style: const TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.bold)),
+            Text(
+              "Detected Issue: $currentType",
+              style: const TextStyle(
+                  color: Colors.white, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 10),
             const Text(
-              "Reporting this will alert the GridEye Admin with your Meter ID and current load data for immediate action.",
+              "Reporting this will alert the GridEye Admin with your "
+              "Meter ID and current load data for immediate action.",
               style: TextStyle(color: Colors.white70, fontSize: 13),
             ),
           ],
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("CANCEL",
-                  style: TextStyle(color: Colors.white54))),
+            onPressed: () => Navigator.pop(context),
+            child: const Text("CANCEL",
+                style: TextStyle(color: Colors.white54)),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF00E5FF),
@@ -228,26 +248,27 @@ class ConsumerPortal extends StatelessWidget {
     );
   }
 
-  // ── HELPERS — UNTOUCHED ────────────────────────────────────────────────────
+  // ── Helpers ────────────────────────────────────────────
   String _formatTimestamp(dynamic ts) {
     if (ts == null || ts is! Timestamp) return "—";
-    final dt = ts.toDate();
-    final hour =
-        dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
+    final dt   = ts.toDate();
+    final hour = dt.hour > 12
+        ? dt.hour - 12
+        : (dt.hour == 0 ? 12 : dt.hour);
     final ampm = dt.hour >= 12 ? 'PM' : 'AM';
-    final min = dt.minute.toString().padLeft(2, '0');
+    final min  = dt.minute.toString().padLeft(2, '0');
     return "${dt.day}/${dt.month}/${dt.year} | $hour:$min $ampm";
   }
 
   Color _statusColor(String status) {
     switch (status.toLowerCase()) {
-      case 'fault':  return const Color(0xFFFFB74D);
-      case 'theft':  return const Color(0xFFFF5252);
-      default:       return const Color(0xFF69F0AE);
+      case 'fault': return const Color(0xFFFFB74D);
+      case 'theft': return const Color(0xFFFF5252);
+      default:      return const Color(0xFF69F0AE);
     }
   }
 
-  // ── BUILD ──────────────────────────────────────────────────────────────────
+  // ── BUILD ──────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -261,68 +282,90 @@ class ConsumerPortal extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         title: RichText(
-  text: TextSpan(
-    children: [
-      TextSpan(
-        text: 'GRID',
-        style: GoogleFonts.orbitron(
-          fontSize: 18,
-          fontWeight: FontWeight.w800,
-          color: Colors.white,
-          letterSpacing: 4,
+          text: TextSpan(
+            children: [
+              TextSpan(
+                text: 'GRID',
+                style: GoogleFonts.orbitron(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: 4,
+                ),
+              ),
+              TextSpan(
+                text: 'EYE',
+                style: GoogleFonts.orbitron(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF00E5FF),
+                  letterSpacing: 4,
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-      TextSpan(
-        text: 'EYE',
-        style: GoogleFonts.orbitron(
-          fontSize: 18,
-          fontWeight: FontWeight.w800,
-          color: const Color(0xFF00E5FF),
-          letterSpacing: 4,
-        ),
-      ),
-    ],
-  ),
-),
         actions: [
           IconButton(
             icon: const Icon(Icons.account_circle_outlined,
                 color: Colors.white70),
-            onPressed: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => ProfileScreen())),
+            // ✅ FIX: resolved meterID pass ho rahi hai
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ProfileScreen(
+                  meterID: _resolvedMeterID.isEmpty
+                      ? widget.meterID
+                      : _resolvedMeterID,
+                ),
+              ),
+            ),
           ),
         ],
       ),
+
+      // ── Body: meters collection se live data ──────────
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance
             .collection('meters')
-            .doc(meterID)
+            .doc(widget.meterID)   // ✅ widget.meterID
             .snapshots(),
         builder: (context, meterSnapshot) {
+
           if (meterSnapshot.connectionState == ConnectionState.waiting) {
             return const Center(
-                child:
-                    CircularProgressIndicator(color: Color(0xFF00E5FF)));
+                child: CircularProgressIndicator(color: Color(0xFF00E5FF)));
           }
           if (!meterSnapshot.hasData || !meterSnapshot.data!.exists) {
             return const Center(
-                child: Text("Meter Not Found",
-                    style: TextStyle(color: Colors.white)));
+              child: Text(
+                "Meter Not Found",
+                style: TextStyle(color: Colors.white),
+              ),
+            );
           }
 
           final meterData =
               meterSnapshot.data!.data() as Map<String, dynamic>;
 
-          // ── DATA READS — UNTOUCHED ───────────────────────────────────
+          // ── Data reads ──────────────────────────────────
           double currentLoad =
               (meterData['currentLoad'] ?? 0.0).toDouble();
-          double units = (meterData['units'] ?? 0.0).toDouble();
+          double units   = (meterData['units']   ?? 0.0).toDouble();
           double billEst = (meterData['billEst'] ?? 0.0).toDouble();
-          String mID = meterData['meterId'] ?? meterID;
-          String meterStatus = meterData['status'] ?? 'Normal';
-          String city = meterData['city'] ?? '—';
-          String area = meterData['area'] ?? '—';
-          dynamic timestamp = meterData['timestamp'];
+          String mID         = meterData['meterId'] ?? widget.meterID;
+          String meterStatus = meterData['status']  ?? 'Normal';
+          String city        = meterData['city']    ?? '—';
+          String area        = meterData['area']    ?? '—';
+          dynamic timestamp  = meterData['timestamp'];
+
+          // ✅ Resolved meterID state mein save karo
+          // taake AppBar mein ProfileScreen ko pass ho sake
+          if (_resolvedMeterID != mID) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) setState(() => _resolvedMeterID = mID);
+            });
+          }
 
           return StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
@@ -331,38 +374,40 @@ class ConsumerPortal extends StatelessWidget {
                 .where('status', isEqualTo: 'Pending')
                 .snapshots(),
             builder: (context, faultSnapshot) {
-              // ── ALERT LOGIC — UNTOUCHED ──────────────────────────────
+
+              // ── Alert tile logic ────────────────────────
               bool isPending = faultSnapshot.hasData &&
                   faultSnapshot.data!.docs.isNotEmpty;
-              Color accentColor = const Color(0xFF00E5FF);
-              String alertTitle = "REPORT POWER FAULT";
-              String alertSub = "Inform Admin about outages";
-              IconData alertIcon = Icons.report_problem_outlined;
+
+              Color    accentColor = const Color(0xFF00E5FF);
+              String   alertTitle  = "REPORT POWER FAULT";
+              String   alertSub    = "Inform Admin about outages";
+              IconData alertIcon   = Icons.report_problem_outlined;
 
               if (isPending) {
                 accentColor = const Color(0xFFBB86FC);
-                alertTitle = "STATUS: PROCESSING";
-                alertSub = "Report is live. Waiting for Admin...";
-                alertIcon = Icons.sync_rounded;
+                alertTitle  = "STATUS: PROCESSING";
+                alertSub    = "Report is live. Waiting for Admin...";
+                alertIcon   = Icons.sync_rounded;
               } else if (currentLoad == 0.0) {
                 accentColor = const Color(0xFFFF5252);
-                alertTitle = "CRITICAL: NO LOAD";
-                alertSub = "Potential outage! Tap to report.";
-                alertIcon = Icons.power_off_rounded;
+                alertTitle  = "CRITICAL: NO LOAD";
+                alertSub    = "Potential outage! Tap to report.";
+                alertIcon   = Icons.power_off_rounded;
               } else if (currentLoad > 5.0) {
                 accentColor = const Color(0xFFFFB74D);
-                alertTitle = "SYSTEM: HIGH LOAD";
-                alertSub = "High energy usage detected.";
-                alertIcon = Icons.bolt;
+                alertTitle  = "SYSTEM: HIGH LOAD";
+                alertSub    = "High energy usage detected.";
+                alertIcon   = Icons.bolt;
               }
 
               return SingleChildScrollView(
-                padding:
-                    const EdgeInsets.fromLTRB(20, 24, 20, 36),
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 36),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // ── GREETING ─────────────────────────────────────
+
+                    // ── Greeting ──────────────────────────
                     const Text(
                       "Welcome Back,",
                       style: TextStyle(
@@ -382,20 +427,20 @@ class ConsumerPortal extends StatelessWidget {
                     ),
                     const SizedBox(height: 10),
 
-                    // ── STATUS BADGE ──────────────────────────────────
+                    // ── Status Badge ──────────────────────
                     _buildStatusBadge(meterStatus),
                     const SizedBox(height: 22),
 
-                    // ── USAGE CARD ────────────────────────────────────
+                    // ── Usage Card ────────────────────────
                     _buildUsageCard(
                         currentLoad, units, billEst, timestamp, meterStatus),
                     const SizedBox(height: 10),
 
-                    // ── LOCATION SLIM BAR ─────────────────────────────
+                    // ── Location Bar ──────────────────────
                     _buildLocationSlim(area, city),
                     const SizedBox(height: 28),
 
-                    // ── QUICK ACTIONS ─────────────────────────────────
+                    // ── Quick Actions ─────────────────────
                     const Text(
                       "Quick Actions",
                       style: TextStyle(
@@ -406,10 +451,11 @@ class ConsumerPortal extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
 
+                    // Fault report tile
                     _AnimatedActionTile(
-                      icon: alertIcon,
-                      title: alertTitle,
-                      subtitle: alertSub,
+                      icon:        alertIcon,
+                      title:       alertTitle,
+                      subtitle:    alertSub,
                       accentColor: accentColor,
                       onTap: isPending
                           ? () => ScaffoldMessenger.of(context)
@@ -419,16 +465,18 @@ class ConsumerPortal extends StatelessWidget {
                               context, mID, alertTitle),
                     ),
                     const SizedBox(height: 10),
+
+                    // Usage history tile
                     _AnimatedActionTile(
-                      icon: Icons.analytics_outlined,
-                      title: "USAGE HISTORY",
-                      subtitle: "View your energy consumption logs",
+                      icon:        Icons.analytics_outlined,
+                      title:       "USAGE HISTORY",
+                      subtitle:    "View your energy consumption logs",
                       accentColor: const Color(0xFF00E5FF),
                       onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) =>
-                                  UsageHistory(meterID: mID))),
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => UsageHistory(meterID: mID)),
+                      ),
                     ),
                   ],
                 ),
@@ -440,7 +488,7 @@ class ConsumerPortal extends StatelessWidget {
     );
   }
 
-  // ── STATUS BADGE ───────────────────────────────────────────────────────────
+  // ── Status Badge ───────────────────────────────────────
   Widget _buildStatusBadge(String status) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -468,24 +516,20 @@ class ConsumerPortal extends StatelessWidget {
     );
   }
 
-  // ── USAGE CARD ─────────────────────────────────────────────────────────────
+  // ── Usage Card ─────────────────────────────────────────
   Widget _buildUsageCard(double load, double units, double bill,
       dynamic timestamp, String status) {
 
-    // ── currentLoad color — original logic: cyan / red / orange ─────────────
-    Color primaryNumColor = const Color(0xFF00E5FF); // cyan  — normal
+    Color primaryNumColor = const Color(0xFF00E5FF);
     if (load == 0.0) {
-      primaryNumColor = const Color(0xFFFF5252);     // red   — no load
+      primaryNumColor = const Color(0xFFFF5252);
     } else if (status.toLowerCase() == 'fault') {
-      primaryNumColor = Colors.orangeAccent;          // orange — fault
+      primaryNumColor = Colors.orangeAccent;
     }
 
-    // Units & Bill always use their own accent colours (green / yellow)
-    const Color unitsColor  = Color(0xFF69F0AE);
-    const Color billColor   = Color(0xFFFFD740);
+    const Color unitsColor = Color(0xFF69F0AE);
+    const Color billColor  = Color(0xFFFFD740);
 
-    // ── ONE shared text style for ALL card labels ──────────────────────────
-    // fontFamily: default Material (Roboto) — weight w700, letterSpacing 1.2
     const TextStyle labelStyle = TextStyle(
       color: Colors.white,
       fontSize: 11,
@@ -493,12 +537,10 @@ class ConsumerPortal extends StatelessWidget {
       letterSpacing: 1.2,
     );
 
-    // ── ONE shared text style for ALL card values ──────────────────────────
-    // Same font, same weight (w700), only size & color differ per field
     TextStyle valueStyle(double size, Color color) => TextStyle(
       color: color,
       fontSize: size,
-      fontWeight: FontWeight.w700,   // ← identical weight across all three
+      fontWeight: FontWeight.w700,
       letterSpacing: size > 30 ? -1.0 : 0.0,
     );
 
@@ -524,59 +566,40 @@ class ConsumerPortal extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
 
-                // ── Label: CURRENT LOAD ──────────────────────────────
                 const Text("CURRENT LOAD", style: labelStyle),
                 const SizedBox(height: 8),
-
-                // ── Value: load number — same font/weight as units/bill ──
                 Text(
                   "${load.toStringAsFixed(2)} kW",
                   style: valueStyle(46, primaryNumColor),
                 ),
-
                 const SizedBox(height: 20),
 
-                // ── Divider ──────────────────────────────────────────
-                Container(
-                  height: 1,
-                  color: Colors.white.withOpacity(0.07),
-                ),
+                Container(height: 1, color: Colors.white.withOpacity(0.07)),
                 const SizedBox(height: 18),
 
-                // ── Units + Bill — same label/value styles ────────────
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Units
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text("UNITS", style: labelStyle),
                         const SizedBox(height: 6),
-                        Text(
-                          units.toStringAsFixed(1),
-                          style: valueStyle(24, unitsColor),
-                        ),
+                        Text(units.toStringAsFixed(1),
+                            style: valueStyle(24, unitsColor)),
                       ],
                     ),
-
-                    // Separator
                     Container(
-                      width: 1,
-                      height: 44,
-                      color: Colors.white.withOpacity(0.07),
-                    ),
-
-                    // Bill
+                        width: 1,
+                        height: 44,
+                        color: Colors.white.withOpacity(0.07)),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         const Text("BILL (EST)", style: labelStyle),
                         const SizedBox(height: 6),
-                        Text(
-                          "Rs. ${bill.toStringAsFixed(0)}",
-                          style: valueStyle(24, billColor),
-                        ),
+                        Text("Rs. ${bill.toStringAsFixed(0)}",
+                            style: valueStyle(24, billColor)),
                       ],
                     ),
                   ],
@@ -585,14 +608,14 @@ class ConsumerPortal extends StatelessWidget {
             ),
           ),
 
-          // ── Footer: last updated ──────────────────────────────────────
+          // Footer
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 11),
             decoration: BoxDecoration(
               color: Colors.black.withOpacity(0.25),
               borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(22),
+                bottomLeft:  Radius.circular(22),
                 bottomRight: Radius.circular(22),
               ),
             ),
@@ -619,7 +642,7 @@ class ConsumerPortal extends StatelessWidget {
     );
   }
 
-  // ── LOCATION SLIM BAR ──────────────────────────────────────────────────────
+  // ── Location Slim Bar ──────────────────────────────────
   Widget _buildLocationSlim(String area, String city) {
     return Container(
       width: double.infinity,
