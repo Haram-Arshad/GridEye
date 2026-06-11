@@ -37,7 +37,7 @@ class AdminProfileScreen extends StatelessWidget {
         children: [
           const SizedBox(height: 30),
 
-          // ── Profile Header ──────────────────────────────────
+          // Profile Header
           Center(
             child: Column(
               children: [
@@ -99,7 +99,7 @@ class AdminProfileScreen extends StatelessWidget {
 
           const SizedBox(height: 40),
 
-          // ── Section Label ───────────────────────────────────
+          // Section Label
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Text(
@@ -113,7 +113,7 @@ class AdminProfileScreen extends StatelessWidget {
           ),
           const SizedBox(height: 15),
 
-          // ── Settings List ───────────────────────────────────
+          // Settings List
           Expanded(
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -140,7 +140,7 @@ class AdminProfileScreen extends StatelessWidget {
             ),
           ),
 
-          // ── Logout Button ───────────────────────────────────
+          // Logout Button 
           Padding(
             padding: const EdgeInsets.all(25.0),
             child: OutlinedButton(
@@ -171,7 +171,7 @@ class AdminProfileScreen extends StatelessWidget {
     );
   }
 
-  // ── Tile Builder ─────────────────────────────────────────
+  // Tile Builder
   Widget _buildInfoTile(
     IconData icon,
     String title,
@@ -207,7 +207,7 @@ class AdminProfileScreen extends StatelessWidget {
     );
   }
 
-  // ── Dialog Helpers ───────────────────────────────────────
+  // Dialog Helpers
   void _showComingSoon(BuildContext context, String feature) {
     showDialog(
       context: context,

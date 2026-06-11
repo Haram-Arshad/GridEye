@@ -58,7 +58,7 @@ class MeterAnalyticsHistory extends StatelessWidget {
             
             double avgLoad = totalEvents > 0 ? sumLoad / totalEvents : 0.0;
             String meterStatus = totalEvents > 0 ? "Active" : "Offline";
-            // --- Calculation Logic End ---
+            //  Calculation Logic End 
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -183,7 +183,6 @@ class MeterAnalyticsHistory extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // ✅ FIX: Flexible prevents long title from overflowing into timestamp
                     Flexible(
                       child: Text(
                         title,

@@ -124,9 +124,9 @@ class _AnimatedActionTileState extends State<_AnimatedActionTile>
   }
 }
 
-// ═══════════════════════════════════════════════════════
+
 // CONSUMER PORTAL — StatefulWidget
-// ═══════════════════════════════════════════════════════
+
 class ConsumerPortal extends StatefulWidget {
   final String meterID;
   const ConsumerPortal({super.key, required this.meterID});
@@ -136,10 +136,10 @@ class ConsumerPortal extends StatefulWidget {
 }
 
 class _ConsumerPortalState extends State<ConsumerPortal> {
-  // Firestore se resolve hone wali real meterID store karenge
+  
   String _resolvedMeterID = '';
 
-  // ── Fault Report Logic ─────────────────────────────────
+  //  Fault Report Logic 
   Future<void> _sendFaultReport(
       BuildContext context, String mID, String faultType) async {
     try {
@@ -165,7 +165,7 @@ class _ConsumerPortalState extends State<ConsumerPortal> {
         return;
       }
 
-      // Clean fault type save karo
+     
       String cleanType = 'POWER_FAULT';
       if (faultType.contains('NO LOAD'))   cleanType = 'NO_LOAD';
       if (faultType.contains('HIGH LOAD')) cleanType = 'HIGH_LOAD';
@@ -248,7 +248,7 @@ class _ConsumerPortalState extends State<ConsumerPortal> {
     );
   }
 
-  // ── Helpers ────────────────────────────────────────────
+  // Helpers 
   String _formatTimestamp(dynamic ts) {
     if (ts == null || ts is! Timestamp) return "—";
     final dt   = ts.toDate();
@@ -268,7 +268,7 @@ class _ConsumerPortalState extends State<ConsumerPortal> {
     }
   }
 
-  // ── BUILD ──────────────────────────────────────────────
+  // BUILD
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -324,11 +324,11 @@ class _ConsumerPortalState extends State<ConsumerPortal> {
         ],
       ),
 
-      // ── Body: meters collection se live data ──────────
+      //  Body: 
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance
             .collection('meters')
-            .doc(widget.meterID)   // ✅ widget.meterID
+            .doc(widget.meterID)   //widget.meterID
             .snapshots(),
         builder: (context, meterSnapshot) {
 
@@ -348,7 +348,7 @@ class _ConsumerPortalState extends State<ConsumerPortal> {
           final meterData =
               meterSnapshot.data!.data() as Map<String, dynamic>;
 
-          // ── Data reads ──────────────────────────────────
+          // Data reads 
           double currentLoad =
               (meterData['currentLoad'] ?? 0.0).toDouble();
           double units   = (meterData['units']   ?? 0.0).toDouble();
@@ -359,8 +359,7 @@ class _ConsumerPortalState extends State<ConsumerPortal> {
           String area        = meterData['area']    ?? '—';
           dynamic timestamp  = meterData['timestamp'];
 
-          // ✅ Resolved meterID state mein save karo
-          // taake AppBar mein ProfileScreen ko pass ho sake
+         
           if (_resolvedMeterID != mID) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted) setState(() => _resolvedMeterID = mID);
@@ -375,7 +374,7 @@ class _ConsumerPortalState extends State<ConsumerPortal> {
                 .snapshots(),
             builder: (context, faultSnapshot) {
 
-              // ── Alert tile logic ────────────────────────
+              // Alert tile logic
               bool isPending = faultSnapshot.hasData &&
                   faultSnapshot.data!.docs.isNotEmpty;
 
@@ -407,7 +406,7 @@ class _ConsumerPortalState extends State<ConsumerPortal> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
 
-                    // ── Greeting ──────────────────────────
+                    // Greeting 
                     const Text(
                       "Welcome Back,",
                       style: TextStyle(
@@ -427,20 +426,20 @@ class _ConsumerPortalState extends State<ConsumerPortal> {
                     ),
                     const SizedBox(height: 10),
 
-                    // ── Status Badge ──────────────────────
+                    //  Status Badge 
                     _buildStatusBadge(meterStatus),
                     const SizedBox(height: 22),
 
-                    // ── Usage Card ────────────────────────
+                    // Usage Card 
                     _buildUsageCard(
                         currentLoad, units, billEst, timestamp, meterStatus),
                     const SizedBox(height: 10),
 
-                    // ── Location Bar ──────────────────────
+                    // Location Bar 
                     _buildLocationSlim(area, city),
                     const SizedBox(height: 28),
 
-                    // ── Quick Actions ─────────────────────
+                    //  Quick Actions
                     const Text(
                       "Quick Actions",
                       style: TextStyle(
@@ -488,7 +487,7 @@ class _ConsumerPortalState extends State<ConsumerPortal> {
     );
   }
 
-  // ── Status Badge ───────────────────────────────────────
+  // Status Badge 
   Widget _buildStatusBadge(String status) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -516,7 +515,7 @@ class _ConsumerPortalState extends State<ConsumerPortal> {
     );
   }
 
-  // ── Usage Card ─────────────────────────────────────────
+  // Usage Card 
   Widget _buildUsageCard(double load, double units, double bill,
       dynamic timestamp, String status) {
 
@@ -642,7 +641,7 @@ class _ConsumerPortalState extends State<ConsumerPortal> {
     );
   }
 
-  // ── Location Slim Bar ──────────────────────────────────
+  // Location Slim Bar
   Widget _buildLocationSlim(String area, String city) {
     return Container(
       width: double.infinity,

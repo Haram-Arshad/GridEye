@@ -42,8 +42,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
   data['status'] == 'Theft' 
       ? BitmapDescriptor.hueRed 
       : (data['status'] == 'Fault' 
-          ? BitmapDescriptor.hueOrange // Faults ke liye Orange pin
-          : BitmapDescriptor.hueAzure)  // Normal ke liye Blue/Azure pin
+          ? BitmapDescriptor.hueOrange 
+          : BitmapDescriptor.hueAzure)  
 ),
               infoWindow: InfoWindow(
                 title: "Meter: ${data['meterId'] ?? 'Unknown'}",
@@ -66,7 +66,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        centerTitle: false, // Consistency with Profile Screen
+        centerTitle: false, 
         title: RichText(
   text: TextSpan(
     children: [
@@ -101,16 +101,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
       MaterialPageRoute(builder: (context) => const ProfileScreen()));
 },
           ),
-          // 2. Notifications Button (LOGIC: Recent/Unread Alerts Only)
-        // Purana IconButton hata kar ye StreamBuilder wala logic paste karein
+          // 2. Notifications Button 
+        
 StreamBuilder<QuerySnapshot>(
- // Firestore se wo alerts dhoond raha hai jo abhi tak nahi parhay gaye
+ 
 stream: FirebaseFirestore.instance
  .collection('Alerts')
  .where('isRead', isEqualTo: false)
  .snapshots(),
  builder: (context, snapshot) {
- // Unread alerts ki ginti
+//Alerts alarm
  int unreadCount = snapshot.hasData ? snapshot.data!.docs.length : 0;
  bool hasUnread = unreadCount > 0;
 
@@ -120,7 +120,7 @@ stream: FirebaseFirestore.instance
  IconButton(
  icon: Icon(
  Icons.notifications_active, 
- // Agar 1 ya us se zyada alerts hain toh Red, warna White
+ 
  color: hasUnread ? Colors.redAccent : Colors.white70
  ),
  tooltip: 'Recent Alerts',
@@ -132,10 +132,10 @@ stream: FirebaseFirestore.instance
  },
  ),
  
- // AGAR UNREAD ALERTS HAIN TOH NUMBER WALA BADGE DIKHAO
+ 
  if (hasUnread)
  Positioned(
- right: 4, // Thora adjust kiya taake number pura aaye
+ right: 4, 
  top: 4,
  child: Container(
  padding: const EdgeInsets.all(2),
@@ -144,7 +144,7 @@ stream: FirebaseFirestore.instance
  shape: BoxShape.circle,
  border: Border.all(color: const Color(0xFF0D1B2A), width: 1.5),
  ),
- // Size thora barha diya taake number fit aa sakay
+ 
  constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
  child: Center(
  child: Text(
@@ -167,10 +167,10 @@ stream: FirebaseFirestore.instance
   icon: const Icon(Icons.logout_rounded, color: Colors.white70), // Aapki original UI
   onPressed: () {
   if (Navigator.canPop(context)) {
-    // Ye aapko wapis Role Selection par le jayega
+   
     Navigator.pop(context); 
   } else {
-    // Agar koi direct login hai (multi nahi hai), toh login par jaye
+    
     Navigator.pushReplacementNamed(context, '/login');
   }
 },

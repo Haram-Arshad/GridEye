@@ -40,9 +40,9 @@ class GridEyeApp extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SHARED DESIGN CONSTANTS — unchanged
-// ─────────────────────────────────────────────────────────────────────────────
+
+// SHARED DESIGN CONSTANTS 
+
 class _GE {
   static const bgDeep   = Color(0xFF070E17);
   static const bgMid    = Color(0xFF0D1B2A);
@@ -52,9 +52,9 @@ class _GE {
   static const deepNavy = Color(0xFF051428);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// LOGO — 100% unchanged
-// ─────────────────────────────────────────────────────────────────────────────
+//--------------------------------------------------
+// LOGO:
+//--------------------------------------------------
 class GridEyeLogoMark extends StatefulWidget {
   final double size;
   final double progress;
@@ -390,9 +390,9 @@ class _GridEyeLogoPainter extends CustomPainter {
       old.ringPhase != ringPhase;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// BACKGROUND — unchanged
-// ─────────────────────────────────────────────────────────────────────────────
+//-------------
+// BACKGROUND 
+//-------------
 class _GEBackground extends StatelessWidget {
   const _GEBackground();
 
@@ -469,9 +469,9 @@ class _GridTexturePainter extends CustomPainter {
   bool shouldRepaint(_GridTexturePainter old) => false;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// LOGIN SCREEN — logic unchanged, font fixes only
-// ─────────────────────────────────────────────────────────────────────────────
+//-----------------------------------------------------------
+// LOGIN SCREEN:
+//-----------------------------------------------------------
 class GridEyeLogin extends StatefulWidget {
   @override
   _GridEyeLoginState createState() => _GridEyeLoginState();
@@ -480,7 +480,7 @@ class GridEyeLogin extends StatefulWidget {
 class _GridEyeLoginState extends State<GridEyeLogin>
     with TickerProviderStateMixin {
 
-  // ── LOGIC — UNTOUCHED ─────────────────────────────────────────────────────
+  // LOGIC:
   final TextEditingController _emailController    = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
@@ -705,7 +705,7 @@ class _GridEyeLoginState extends State<GridEyeLogin>
 
                   const SizedBox(height: 38),
 
-                  // ── AUTHENTICATE BUTTON — font changed to match consumer cards ──
+                  // AUTHENTICATE BUTTON:
                   _GEPrimaryButton(
                     label: 'AUTHENTICATE',
                     isLoading: _isLoading,
@@ -732,9 +732,9 @@ class _GridEyeLoginState extends State<GridEyeLogin>
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ROLE SELECTION SCREEN — logic unchanged, font fixes only
-// ─────────────────────────────────────────────────────────────────────────────
+//------------------------------------------------------------
+// ROLE SELECTION SCREEN:
+//------------------------------------------------------------
 class RoleSelectionScreen extends StatefulWidget {
   final String meterID;
   RoleSelectionScreen({required this.meterID});
@@ -928,9 +928,9 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// TEXT FIELD — unchanged
-// ─────────────────────────────────────────────────────────────────────────────
+//-------------
+// TEXT FIELD:
+//-------------
 class _GETextField extends StatefulWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
@@ -999,10 +999,9 @@ class _GETextFieldState extends State<_GETextField> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// PRIMARY BUTTON
-// CHANGE: label text → plain TextStyle matching consumer card font (w700, no orbitron)
-// ─────────────────────────────────────────────────────────────────────────────
+//-------------------
+// PRIMARY BUTTON:
+//-------------------
 class _GEPrimaryButton extends StatefulWidget {
   final String label;
   final bool isLoading;
@@ -1074,8 +1073,6 @@ class _GEPrimaryButtonState extends State<_GEPrimaryButton>
                   )
                 : Text(
                     widget.label,
-                    // ── CHANGED: plain TextStyle — same as consumer card labels ──
-                    // fontFamily: Roboto (Material default), w700, letterSpacing 1.5
                     style: const TextStyle(
                       color: Colors.black,
                       fontSize: 14,
@@ -1090,11 +1087,9 @@ class _GEPrimaryButtonState extends State<_GEPrimaryButton>
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ROLE CARD
-// CHANGE: title keeps orbitron (GridEye font is correct per requirement)
-//         subtitle → plain TextStyle matching consumer card subtitle font
-// ─────────────────────────────────────────────────────────────────────────────
+//-------------------------
+// ROLE CARD:
+//-------------------------
 class _GERoleCard extends StatefulWidget {
   final String title;
   final String subtitle;
@@ -1189,7 +1184,7 @@ class _GERoleCardState extends State<_GERoleCard>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Title — orbitron kept (GridEye theme font, correct)
+                  // Title :
                   Text(
                     widget.title,
                     style: GoogleFonts.orbitron(
@@ -1200,8 +1195,7 @@ class _GERoleCardState extends State<_GERoleCard>
                     ),
                   ),
                   const SizedBox(height: 5),
-                  // ── CHANGED: subtitle → plain TextStyle matching consumer card ──
-                  // Same as _AnimatedActionTile subtitle: color 0xFF6B7F99, 12px, w400
+                  // subtitle:
                   Text(
                     widget.subtitle,
                     style: const TextStyle(

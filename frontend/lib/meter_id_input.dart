@@ -29,7 +29,7 @@ class _MeterIdInputScreenState extends State<MeterIdInputScreen> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 40),
-              // Icon for visual appeal
+              // Icon 
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -56,7 +56,7 @@ class _MeterIdInputScreenState extends State<MeterIdInputScreen> {
               ),
               const SizedBox(height: 60),
 
-              // Meter ID Field (Exactly like your login UI)
+              // Meter ID Field
               TextField(
                 controller: _meterController,
                 style: const TextStyle(color: Colors.white),

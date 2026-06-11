@@ -4,15 +4,15 @@ import 'package:google_fonts/google_fonts.dart';
 import 'dart:math' as math;
 import 'meter_analytics_history.dart';
 
-// ── Design tokens ────────────────────────────────────────────
+//  Design tokens
 const _bgDeep  = Color(0xFF070E17);
 const _bgMid   = Color(0xFF0D1B2A);
 const _cyan    = Color(0xFF00E5FF);
 const _cyanDim = Color(0xFF008CAB);
 
-// ═══════════════════════════════════════════════════════════════
+
 // AlertCenter
-// ═══════════════════════════════════════════════════════════════
+
 class AlertCenter extends StatefulWidget {
   final bool showOnlyUnread;
   const AlertCenter({super.key, this.showOnlyUnread = false});
@@ -212,9 +212,9 @@ class _AlertCenterState extends State<AlertCenter>
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
+
 // PulseDot
-// ═══════════════════════════════════════════════════════════════
+
 class _PulseDot extends StatefulWidget {
   @override
   State<_PulseDot> createState() => _PulseDotState();
@@ -267,9 +267,9 @@ class _PulseDotState extends State<_PulseDot>
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
+
 // NotifCard 
-// ═══════════════════════════════════════════════════════════════
+
 class _NotifCard extends StatefulWidget {
   final QueryDocumentSnapshot doc;
   final String mID, desc, type;
@@ -405,9 +405,9 @@ class _NotifCardState extends State<_NotifCard>
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
+
 // ArchiveCard 
-// ═══════════════════════════════════════════════════════════════
+
 class _ArchiveCard extends StatelessWidget {
   final QueryDocumentSnapshot doc;
   final String mID, desc, status;
@@ -496,9 +496,9 @@ class _ArchiveCard extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
+
 // _IconCircle & _TickBadge 
-// ═══════════════════════════════════════════════════════════════
+
 class _IconCircle extends StatelessWidget {
   final IconData icon;
   final Color color;
@@ -536,9 +536,9 @@ class _TickBadge extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
+
 // METER DETAIL PAGE 
-// ═══════════════════════════════════════════════════════════════
+
 class MeterDetailPage extends StatefulWidget {
   final QueryDocumentSnapshot alertData;
   const MeterDetailPage({super.key, required this.alertData});
@@ -632,7 +632,7 @@ class _MeterDetailPageState extends State<MeterDetailPage>
     return Scaffold(
       backgroundColor: _bgMid,
 
-      // ── AppBar — identical to Alert Archive ────────────────
+      // AppBar
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(64),
         child: Container(
@@ -683,7 +683,7 @@ class _MeterDetailPageState extends State<MeterDetailPage>
           ),
         ),
       ),
-      // ────────────────────────────────────────────────────────
+      
 
       body: Container(
         decoration: const BoxDecoration(
@@ -778,7 +778,7 @@ class _MeterDetailPageState extends State<MeterDetailPage>
                         );
                       },
                     ),
-                    // ─────────────────────────────────────────────────
+                    
 
                     const SizedBox(height: 13),
 
@@ -792,8 +792,7 @@ class _MeterDetailPageState extends State<MeterDetailPage>
                   ],
                 ),
               ),
-              // ────────────────────────────────────────────────────
-
+              
               const SizedBox(height: 20),
 
               // ── Info tiles with staggered entry ─────────────────
@@ -812,8 +811,7 @@ class _MeterDetailPageState extends State<MeterDetailPage>
                 child: _infoTile(statusIcon,
                     'CURRENT STATUS', statusLabel, statusColor),
               ),
-              // ────────────────────────────────────────────────────
-
+             
               const Spacer(),
 
               // CTA button — completely unchanged
@@ -897,9 +895,9 @@ class _MeterDetailPageState extends State<MeterDetailPage>
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
+
 // _StagTile — staggered slide+fade wrapper for info tiles
-// ═══════════════════════════════════════════════════════════════
+
 class _StagTile extends StatelessWidget {
   final Animation<double> opacity;
   final Animation<Offset>  slide;
@@ -921,16 +919,14 @@ class _StagTile extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
-// _EyeLogoPainter — full eye at progress=1.0,
-// ringPhase drives which quarter-arc segment is highlighted.
-// Taken directly from splash _GridEyeLogoPainter logic.
-// ═══════════════════════════════════════════════════════════════
-class _EyeLogoPainter extends CustomPainter {
-  final double ringPhase;    // 0.0→1.0, continuous from AnimationController
-  final double glowOpacity;  // from pulse
 
-  // 4 quarter-arc colors — same as splash screen
+// _EyeLogoPainter
+
+class _EyeLogoPainter extends CustomPainter {
+  final double ringPhase;    
+  final double glowOpacity;  
+
+  
   static const _c0 = Color(0xFF00E5FF); // cyan
   static const _c1 = Color(0xFFFFAB40); // orange
   static const _c2 = Color(0xFF69F0AE); // green
@@ -953,7 +949,7 @@ class _EyeLogoPainter extends CustomPainter {
     final rx  = cx + size.width  * 0.47;
     final aH  = size.height * 0.36;
 
-    // ── 1. Eye fill + grid ────────────────────────────────────
+    // 1. Eye fill + grid
     final eyePath = Path()
       ..moveTo(lx, cy)
       ..quadraticBezierTo(cx, cy - aH, rx, cy)
@@ -978,7 +974,7 @@ class _EyeLogoPainter extends CustomPainter {
     }
     canvas.restore();
 
-    // ── 2. Eye arcs ───────────────────────────────────────────
+    //  2. Eye arcs 
     final arcP = Paint()
       ..color = _cyan.withOpacity(0.95)
       ..style = PaintingStyle.stroke
@@ -990,7 +986,7 @@ class _EyeLogoPainter extends CustomPainter {
     canvas.drawPath(Path()
       ..moveTo(lx, cy)..quadraticBezierTo(cx, cy + aH, rx, cy), arcP);
 
-    // ── 3. Iris rings ─────────────────────────────────────────
+    // 3. Iris rings 
     final r1 = size.width * 0.195;
     final r2 = size.width * 0.130;
 
@@ -1004,7 +1000,7 @@ class _EyeLogoPainter extends CustomPainter {
     canvas.drawCircle(Offset(cx, cy), r1 - 0.6,
       Paint()..color = _deepNav.withOpacity(0.50)..style = PaintingStyle.fill);
 
-    // ── 4. Crosshair ──────────────────────────────────────────
+    // 4. Crosshair 
     final xP = Paint()
       ..color = _cyan.withOpacity(0.68)
       ..style = PaintingStyle.stroke
@@ -1017,7 +1013,7 @@ class _EyeLogoPainter extends CustomPainter {
     canvas.drawLine(Offset(cx, cy-gap-arm), Offset(cx, cy-gap), xP);
     canvas.drawLine(Offset(cx, cy+gap), Offset(cx, cy+gap+arm), xP);
 
-    // ── 5. Rotating quarter-arc segments ──────────────────────
+    // 5. Rotating quarter-arc segments
     final segR = size.width * 0.155;
     const gap2 = 0.10;
     const sweep = (math.pi / 2) - gap2;
@@ -1053,7 +1049,7 @@ class _EyeLogoPainter extends CustomPainter {
       }
     }
 
-    // ── 6. Center pupil ───────────────────────────────────────
+    //  6. Center pupil 
     final pR = size.width * 0.072;
 
     // Glow
@@ -1077,7 +1073,7 @@ class _EyeLogoPainter extends CustomPainter {
       Paint()..color = Colors.white.withOpacity(0.55)..style = PaintingStyle.fill,
     );
 
-    // ── 7. Tip ticks ──────────────────────────────────────────
+    // 7. Tip ticks 
     final tP = Paint()
       ..color = _cyan.withOpacity(0.50)
       ..style = PaintingStyle.stroke

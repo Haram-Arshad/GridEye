@@ -4,8 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class ProfileScreen extends StatelessWidget {
-  // Consumer side se meterID aayega
-  // Admin side se kuch nahi aayega (null rahega)
   final String? meterID;
   const ProfileScreen({super.key, this.meterID});
 
@@ -41,7 +39,7 @@ class ProfileScreen extends StatelessWidget {
           );
         }
 
-        // Agar users doc nahi mila
+        
         final email = FirebaseAuth.instance.currentUser?.email ?? '—';
         String role = 'consumer';
         String adminId = 'ADMIN-001'; // fallback
@@ -69,9 +67,9 @@ class ProfileScreen extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════
+//------------------------------------------------------
 // ADMIN PROFILE
-// ═══════════════════════════════════════════════════════
+// -----------------------------------------------------
 class _AdminProfileScreen extends StatelessWidget {
   final String email;
   final String adminId;
@@ -90,7 +88,7 @@ class _AdminProfileScreen extends StatelessWidget {
         children: [
           const SizedBox(height: 30),
 
-          // ── Header ──────────────────────────────────────
+          // Header 
           Center(
             child: Column(
               children: [
@@ -163,8 +161,9 @@ class _AdminProfileScreen extends StatelessWidget {
           ),
 
           const SizedBox(height: 35),
-
-          // ── Section Label ────────────────────────────────
+          //-----------------
+          // Section Label 
+          //-----------------
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Text(
@@ -178,7 +177,7 @@ class _AdminProfileScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          // ── Tiles ────────────────────────────────────────
+          // Tiles
           Expanded(
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -208,7 +207,7 @@ class _AdminProfileScreen extends StatelessWidget {
             ),
           ),
 
-          // ── Logout ───────────────────────────────────────
+          // Logout 
           _buildLogoutButton(context),
         ],
       ),
@@ -216,9 +215,9 @@ class _AdminProfileScreen extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════
+// -------------------------------------------------------
 // CONSUMER PROFILE
-// ═══════════════════════════════════════════════════════
+// -------------------------------------------------------
 class _ConsumerProfileScreen extends StatelessWidget {
   final String email;
   final String meterID;
@@ -254,8 +253,9 @@ class _ConsumerProfileScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 30),
-
-              // ── Header ────────────────────────────────────
+              //--------------
+              //  Header 
+              //--------------
               Center(
                 child: Column(
                   children: [
@@ -405,10 +405,9 @@ class _ConsumerProfileScreen extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════
+// --------------------------
 // SHARED WIDGETS & HELPERS
-// (Dono Admin + Consumer use karti hain)
-// ═══════════════════════════════════════════════════════
+// --------------------------
 
 AppBar _buildAppBar(BuildContext context) {
   return AppBar(
@@ -488,7 +487,7 @@ Widget _buildLogoutButton(BuildContext context) {
   );
 }
 
-// ── Dialog Helpers ───────────────────────────────────────
+// ___Dialog Helpers______________________________________________
 void _showComingSoon(BuildContext context, String feature) {
   showDialog(
     context: context,

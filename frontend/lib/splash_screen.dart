@@ -3,13 +3,9 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'package:google_fonts/google_fonts.dart';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// GRIDEYE SPLASH SCREEN — Refined Logo + 5–6s Premium Timing
-// ✅ Business logic: UNCHANGED
-// ✅ Color theme: UNCHANGED (0xFF0D1B2A, 0xFF00E5FF preserved)
-// ✅ Navigation: UNCHANGED (pushReplacementNamed('/login'))
-// 🎨 UI ONLY: refined logo, thicker eye, themed colors, 5.5s duration
-// ─────────────────────────────────────────────────────────────────────────────
+// ======================
+// GRIDEYE SPLASH SCREEN 
+// ======================
 
 class SplashScreen extends StatefulWidget {
   @override
@@ -19,7 +15,7 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
 
-  // ── App color theme constants (unchanged) ─────────────────────────────────
+  // ___App color theme constants_____________________________________
   static const _bgDeep    = Color(0xFF070E17);
   static const _bgMid     = Color(0xFF0D1B2A);
   static const _bgLight   = Color(0xFF102240);
@@ -27,7 +23,7 @@ class _SplashScreenState extends State<SplashScreen>
   static const _navyBlue  = Color(0xFF0055AA);   // secondary iris accent
   static const _deepNavy  = Color(0xFF051428);   // eye interior fill
 
-  // ── Controllers ───────────────────────────────────────────────────────────
+  // ___ Controllers ___________________________________________________
   late AnimationController _logoCtrl;       // logo draw-on
   late AnimationController _contentCtrl;    // text stagger
   late AnimationController _pulseCtrl;      // breathing glow (∞)
@@ -36,19 +32,19 @@ class _SplashScreenState extends State<SplashScreen>
   late AnimationController _idleCtrl;       // calm idle after reveal (∞)
   late AnimationController _exitCtrl;       // exit fade → navigate
 
-  // ── Logo animations ───────────────────────────────────────────────────────
+  // ___Logo animations__________________________________________________
   late Animation<double> _logoScale;
   late Animation<double> _logoOpacity;
   late Animation<double> _drawProgress;   // 0→1 drives CustomPainter
 
-  // ── Content animations ────────────────────────────────────────────────────
+  // ___Content animations _______________________________________________
   late Animation<double> _titleOpacity;
   late Animation<Offset>  _titleSlide;
   late Animation<double> _taglineOpacity;
   late Animation<double> _dividerScale;
   late Animation<double> _loaderOpacity;
 
-  // ── Ambient animations ────────────────────────────────────────────────────
+  // ___Ambient animations _________________________________________________
   late Animation<double> _pulseScale;
   late Animation<double> _pulseOpacity;
   late Animation<double> _scanY;           // 0→1 vertical sweep
@@ -59,15 +55,14 @@ class _SplashScreenState extends State<SplashScreen>
   void initState() {
     super.initState();
 
-    // ════════════════════════════════════════════════════════════════════════
-    // BUSINESS LOGIC — COMPLETELY UNCHANGED
-    // Total UX time: ~5.5s → smooth 600ms exit fade → pushReplacementNamed
-    // ════════════════════════════════════════════════════════════════════════
+    //-------------------------
+    // BUSINESS LOGIC
+    // ------------------------
     Timer(const Duration(milliseconds: 5500), () {
       if (mounted) _exitCtrl.forward();
     });
 
-    // ── Logo controller: 1400ms draw-on ───────────────────────────────────
+    // ___Logo controller: 1400ms draw-on ______________________________________
     _logoCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1400),
@@ -92,7 +87,7 @@ class _SplashScreenState extends State<SplashScreen>
       ),
     );
 
-    // ── Content controller: 1000ms stagger ────────────────────────────────
+    // ___Content controller: 1000ms stagger_____________________________________
     _contentCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1000),
@@ -130,7 +125,7 @@ class _SplashScreenState extends State<SplashScreen>
       ),
     );
 
-    // ── Pulse: breathing outer glow ───────────────────────────────────────
+    // ___ Pulse: breathing outer glow ____
     _pulseCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2400),
@@ -143,7 +138,7 @@ class _SplashScreenState extends State<SplashScreen>
       CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut),
     );
 
-    // ── Scan: vertical sweep line ─────────────────────────────────────────
+    // __Scan: vertical sweep line ______
     _scanCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 3200),
@@ -153,13 +148,13 @@ class _SplashScreenState extends State<SplashScreen>
       CurvedAnimation(parent: _scanCtrl, curve: Curves.linear),
     );
 
-    // ── Dots loader ───────────────────────────────────────────────────────
+    //___Dots loader __________________
     _dotsCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     )..repeat();
 
-    // ── Idle: subtle ring scale during the "hold" window (2s–5.5s) ────────
+    // ___Idle: subtle ring scale during the "hold" window (2s–5.5s) __
     _idleCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 3000),
@@ -169,7 +164,7 @@ class _SplashScreenState extends State<SplashScreen>
       CurvedAnimation(parent: _idleCtrl, curve: Curves.easeInOut),
     );
 
-    // ── Exit controller: 600ms fade-out ───────────────────────────────────
+    //___Exit controller: 600ms fade-out __________
     _exitCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
@@ -182,12 +177,12 @@ class _SplashScreenState extends State<SplashScreen>
     // Navigate only after exit animation completes
     _exitCtrl.addStatusListener((status) {
       if (status == AnimationStatus.completed && mounted) {
-        // ── BUSINESS LOGIC UNCHANGED ──────────────────────────────────────
+        // ___BUSINESS LOGIC UNCHANGED_________________________
         Navigator.pushReplacementNamed(context, '/login');
       }
     });
 
-    // ── Staggered playback ────────────────────────────────────────────────
+    // ___Staggered playback ___________________________________
     _logoCtrl.forward();
     Future.delayed(const Duration(milliseconds: 850), () {
       if (mounted) _contentCtrl.forward();
@@ -217,7 +212,7 @@ class _SplashScreenState extends State<SplashScreen>
         child: Stack(
           children: [
 
-            // ── BG: Radial gradient ────────────────────────────────────────
+            // ___BG: Radial gradient ______
             Container(
               width: double.infinity,
               height: double.infinity,
@@ -231,7 +226,7 @@ class _SplashScreenState extends State<SplashScreen>
               ),
             ),
 
-            // ── BG: Grid texture ───────────────────────────────────────────
+            // ___BG: Grid texture_______
             RepaintBoundary(
               child: CustomPaint(
                 size: Size(size.width, size.height),
@@ -239,7 +234,7 @@ class _SplashScreenState extends State<SplashScreen>
               ),
             ),
 
-            // ── BG: Scan line sweep ────────────────────────────────────────
+            //___BG: Scan line sweep _____
             AnimatedBuilder(
               animation: _scanY,
               builder: (_, __) {
@@ -271,7 +266,7 @@ class _SplashScreenState extends State<SplashScreen>
               },
             ),
 
-            // ── BG: Ambient corner orbs ────────────────────────────────────
+            // ___BG: Ambient corner orbs______
             AnimatedBuilder(
               animation: _pulseOpacity,
               builder: (_, __) => Stack(children: [
@@ -310,13 +305,13 @@ class _SplashScreenState extends State<SplashScreen>
               ]),
             ),
 
-            // ── MAIN CONTENT ───────────────────────────────────────────────
+            // ___MAIN CONTENT_______________________________________________
             Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
 
-                  // ── Logo assembly ────────────────────────────────────────
+                  // ___Logo assembly _________________
                   AnimatedBuilder(
                     animation: Listenable.merge([
                       _logoCtrl,
@@ -404,7 +399,7 @@ class _SplashScreenState extends State<SplashScreen>
 
                   const SizedBox(height: 44),
 
-                  // ── Text content ─────────────────────────────────────────
+                  // ___Text content____
                   AnimatedBuilder(
                     animation: _contentCtrl,
                     builder: (_, __) => Column(
@@ -485,7 +480,7 @@ class _SplashScreenState extends State<SplashScreen>
               ),
             ),
 
-            // ── BOTTOM: loader + version ───────────────────────────────────
+            //___BOTTOM: loader + version___
             Positioned(
               bottom: 50,
               left: 0,
@@ -524,18 +519,9 @@ class _SplashScreenState extends State<SplashScreen>
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// --------------------------------------------
 // CUSTOM PAINTER — Refined GridEye Logo Mark
-//
-// Color design (all from existing theme):
-//   • Eye arcs         → 0xFF00E5FF (cyan, 3.5px — thicker)
-//   • Eye interior     → 0xFF051428 (deep navy fill)
-//   • Outer iris ring  → cyan → 0xFF0055AA gradient feel (alternating strokes)
-//   • Inner iris ring  → 0xFF0055AA (navy blue accent)
-//   • Crosshair arms   → 0xFF00E5FF (cyan)
-//   • Pupil            → 0xFF00E5FF (solid cyan)
-//   • Grid inside eye  → 0xFF00E5FF @ low opacity
-// ─────────────────────────────────────────────────────────────────────────────
+// ---------------------------------------------
 class _GridEyeLogoPainter extends CustomPainter {
   final double progress;
   final Color cyanColor;
@@ -551,7 +537,7 @@ class _GridEyeLogoPainter extends CustomPainter {
     required this.glowOpacity,
   });
 
-  // ── 4 static quarter segment colors (theme-synced) ─────────────────────
+  // ___4 static quarter segment colors (theme-synced) ___
   static const _seg0 = Color(0xFF00E5FF); // Cyan    — top    (12→3 o'clock)
   static const _seg1 = Color(0xFFFFAB40); // Orange  — right  (3→6 o'clock)
   static const _seg2 = Color(0xFF69F0AE); // Green   — bottom (6→9 o'clock)
@@ -569,12 +555,14 @@ class _GridEyeLogoPainter extends CustomPainter {
     final cx = size.width / 2;
     final cy = size.height / 2;
 
-    // ── Eye geometry — UNCHANGED ──────────────────────────────────────────
+    // ____Eye geometry____
+
     final leftX = cx - size.width * 0.47;
     final rightX = cx + size.width * 0.47;
     final arcH = size.height * 0.36;
 
-    // ── Paints — UNCHANGED ────────────────────────────────────────────────
+    //____Paints_____
+
     final arcPaint = Paint()
       ..color = cyanColor.withOpacity(0.95)
       ..style = PaintingStyle.stroke
@@ -630,7 +618,7 @@ class _GridEyeLogoPainter extends CustomPainter {
       ..quadraticBezierTo(cx, cy + arcH, leftX, cy)
       ..close();
 
-    // ── Stage 1: Eye interior fill + grid — UNCHANGED ─────────────────────
+    // ___Stage 1: Eye interior___
     if (progress > 0.0) {
       final p = (progress / 0.35).clamp(0.0, 1.0);
       fillPaint.color = deepNavy.withOpacity(0.88 * p);
@@ -651,7 +639,7 @@ class _GridEyeLogoPainter extends CustomPainter {
       canvas.restore();
     }
 
-    // ── Stage 2: Top arc — UNCHANGED ─────────────────────────────────────
+    // ___Stage 2: Top arc___
     final topP = (progress / 0.42).clamp(0.0, 1.0);
     if (topP > 0) {
       final topPath = Path()
@@ -667,7 +655,7 @@ class _GridEyeLogoPainter extends CustomPainter {
       }
     }
 
-    // ── Stage 3: Bottom arc — UNCHANGED ──────────────────────────────────
+    // ____Stage 3: Bottom arc____
     final botP = ((progress - 0.18) / 0.42).clamp(0.0, 1.0);
     if (botP > 0) {
       final botPath = Path()
@@ -683,7 +671,7 @@ class _GridEyeLogoPainter extends CustomPainter {
       }
     }
 
-    // ── Stage 4: Iris rings — UNCHANGED ──────────────────────────────────
+    // ____Stage 4: Iris rings_____
     final irisP = ((progress - 0.45) / 0.27).clamp(0.0, 1.0);
     if (irisP > 0) {
       final irisR1 = size.width * 0.195;
@@ -711,7 +699,7 @@ class _GridEyeLogoPainter extends CustomPainter {
       canvas.drawCircle(Offset(cx, cy), irisR1 - 0.8, irisFill);
     }
 
-    // ── Stage 5: Crosshair — UNCHANGED (pure cyan) ────────────────────────
+    // ____Stage 5: Crosshair_____
     final xhP = ((progress - 0.62) / 0.20).clamp(0.0, 1.0);
     if (xhP > 0) {
       crosshairPaint.color = cyanColor.withOpacity(0.82 * xhP);
@@ -723,13 +711,13 @@ class _GridEyeLogoPainter extends CustomPainter {
       canvas.drawLine(Offset(cx, cy + gap), Offset(cx, cy + gap + arm), crosshairPaint);
     }
 
-    // ── Stage 6: Pupil — 4 static colored quarter arcs + center dot ───────
+    // ___Stage 6: Pupil_____
     final pupilP = ((progress - 0.78) / 0.22).clamp(0.0, 1.0);
     if (pupilP > 0) {
-      // ── Pupil ring radius — sits between irisR3 and center dot ──────────
+      // Pupil ring radius__sits between irisR3 and center dot.
       final segR = size.width * 0.155;
 
-      // Gap between each quarter so they look like 4 distinct segments
+      // Gap between each quarter.
       const gapRad = 0.10; // ~5.7° gap on each side edge
       const quarterSweep = (math.pi / 2) - gapRad; // 90° minus gap
 
@@ -738,7 +726,7 @@ class _GridEyeLogoPainter extends CustomPainter {
         ..strokeWidth = 2.6
         ..strokeCap = StrokeCap.round;
 
-      // Soft glow paint behind each arc — same color, wide + transparent
+      // Soft glow paint behind each arc, same color, wide + transparent
       final segGlowPaint = Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 6.0
@@ -767,7 +755,7 @@ class _GridEyeLogoPainter extends CustomPainter {
         canvas.drawArc(segRect, seg.startAngle, quarterSweep, false, segStrokePaint);
       }
 
-      // ── Center pupil dot — UNCHANGED ──────────────────────────────────
+      // Center pupil dot.
       final pupilR = size.width * 0.072;
 
       // Soft glow
@@ -806,7 +794,7 @@ class _GridEyeLogoPainter extends CustomPainter {
       );
     }
 
-    // ── Stage 7: Tip ticks — UNCHANGED ───────────────────────────────────
+    // ____Stage 7: Tip ticks______
     final tipsP = ((progress - 0.86) / 0.14).clamp(0.0, 1.0);
     if (tipsP > 0) {
       tickPaint.color = cyanColor.withOpacity(0.60 * tipsP);
@@ -825,9 +813,9 @@ class _GridEyeLogoPainter extends CustomPainter {
       old.progress != progress || old.glowOpacity != glowOpacity;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------
 // WAVE DOTS LOADER
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------
 class _WaveDotsLoader extends StatelessWidget {
   final double progress;
   final Color color;
@@ -860,9 +848,9 @@ class _WaveDotsLoader extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------
 // GRID TEXTURE PAINTER (background ambient texture)
-// ─────────────────────────────────────────────────────────────────────────────
+// ------------------------------------------------------
 class _GridTexturePainter extends CustomPainter {
   final Color color;
   const _GridTexturePainter({required this.color});

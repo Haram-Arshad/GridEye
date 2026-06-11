@@ -55,7 +55,7 @@ class ConsumerProfileScreen extends StatelessWidget {
             children: [
               const SizedBox(height: 30),
 
-              // ── Profile Header ────────────────────────────
+              // Profile Header 
               Center(
                 child: Column(
                   children: [
@@ -132,7 +132,7 @@ class ConsumerProfileScreen extends StatelessWidget {
 
               const SizedBox(height: 40),
 
-              // ── Section Label ──────────────────────────────
+              // Section Label 
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Text(
@@ -146,7 +146,7 @@ class ConsumerProfileScreen extends StatelessWidget {
               ),
               const SizedBox(height: 15),
 
-              // ── Settings List ──────────────────────────────
+              // Settings List
               Expanded(
                 child: ListView(
                   padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -179,7 +179,7 @@ class ConsumerProfileScreen extends StatelessWidget {
                 ),
               ),
 
-              // ── Logout ─────────────────────────────────────
+              // Logout
               Padding(
                 padding: const EdgeInsets.all(25.0),
                 child: OutlinedButton(
@@ -212,7 +212,7 @@ class ConsumerProfileScreen extends StatelessWidget {
     );
   }
 
-  // ── Tile Builders ─────────────────────────────────────────
+  // Tile Builders 
   Widget _buildStaticTile(IconData icon, String title, String sub) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
@@ -272,7 +272,7 @@ class ConsumerProfileScreen extends StatelessWidget {
     );
   }
 
-  // ── Dialogs ───────────────────────────────────────────────
+  // Dialogs 
   void _showComingSoon(BuildContext context, String feature) {
     showDialog(
       context: context,
