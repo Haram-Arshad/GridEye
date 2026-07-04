@@ -6,7 +6,29 @@ class MeterAnalyticsHistory extends StatelessWidget {
   final String meterId;
   final String address;
 
-  const MeterAnalyticsHistory({super.key, required this.meterId, required this.address});
+  const MeterAnalyticsHistory({
+    super.key,
+    required this.meterId,
+    required this.address,
+  });
+
+  // ── Month names — no more hardcoded "April" ────────
+  static const _months = [
+    '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+  ];
+
+  String _formatTime(dynamic ts) {
+    if (ts == null || ts is! Timestamp) return 'N/A';
+    final dt   = ts.toDate();
+    final h    = dt.hour > 12
+        ? dt.hour - 12
+        : (dt.hour == 0 ? 12 : dt.hour);
+    final ampm = dt.hour >= 12 ? 'PM' : 'AM';
+    final min  = dt.minute.toString().padLeft(2, '0');
+    // ✅ FIX: dynamic month from datetime
+    return "${dt.day} ${_months[dt.month]}, $h:$min $ampm";
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -16,10 +38,15 @@ class MeterAnalyticsHistory extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Color(0xFF00E5FF), size: 20),
+          icon: const Icon(Icons.arrow_back_ios,
+              color: Color(0xFF00E5FF), size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text("Meter Archive", style: GoogleFonts.orbitron(fontSize: 16, color: Colors.white)),
+        title: Text(
+          "Meter Archive",
+          style: GoogleFonts.orbitron(
+              fontSize: 16, color: Colors.white),
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -30,83 +57,144 @@ class MeterAnalyticsHistory extends StatelessWidget {
               .orderBy('time', descending: true)
               .snapshots(),
           builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator(color: Color(0xFF00E5FF)));
+            if (snapshot.connectionState ==
+                ConnectionState.waiting) {
+              return const Center(
+                child: CircularProgressIndicator(
+                    color: Color(0xFF00E5FF)),
+              );
             }
 
             if (snapshot.hasError) {
-              return Center(child: Text("Error: ${snapshot.error}", style: const TextStyle(color: Colors.white24)));
+              return Center(
+                child: Text(
+                  "Error: ${snapshot.error}",
+                  style: const TextStyle(
+                      color: Colors.white24),
+                ),
+              );
             }
 
-            // --- Calculation Logic Start ---
-            final docs = snapshot.data?.docs ?? [];
-            int totalEvents = docs.length;
-            
+            final docs        = snapshot.data?.docs ?? [];
+            final totalEvents = docs.length;
+
+            // ── Stats calculations ─────────────────────
             double sumLoad = 0.0;
-            for (var doc in docs) {
-              final data = doc.data() as Map<String, dynamic>;
-              var val = data['loadValue'];
+            int    theftCount = 0;
 
+            for (var doc in docs) {
+              final d = doc.data() as Map<String, dynamic>;
+              final val = d['loadValue'];
               if (val != null) {
-                if (val is num) {
-                  sumLoad += val.toDouble();
-                } else if (val is String) {
-                  sumLoad += double.tryParse(val) ?? 0.0;
-                }
+                sumLoad += val is num
+                    ? val.toDouble()
+                    : double.tryParse(val.toString()) ?? 0.0;
               }
+              if ((d['status'] ?? '') == 'Theft') theftCount++;
             }
-            
-            double avgLoad = totalEvents > 0 ? sumLoad / totalEvents : 0.0;
-            String meterStatus = totalEvents > 0 ? "Active" : "Offline";
-            //  Calculation Logic End 
+
+            final avgLoad    = totalEvents > 0
+                ? sumLoad / totalEvents : 0.0;
+            final meterStatus = totalEvents > 0
+                ? "Active" : "Offline";
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+
+                // ── Header card ──────────────────────────
                 _buildMeterHeader(meterId, address),
-                const SizedBox(height: 30),
-                
+                const SizedBox(height: 20),
+
+                // ── Stats row ────────────────────────────
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildMiniStat("Total Events", totalEvents.toString().padLeft(2, '0'), Colors.redAccent),
-                    _buildMiniStat("Avg Load", "${avgLoad.toStringAsFixed(1)}kW", Colors.orangeAccent),
-                    _buildMiniStat("Status", meterStatus, Colors.greenAccent),
+                    _buildMiniStat(
+                      "Total Events",
+                      totalEvents.toString().padLeft(2, '0'),
+                      Colors.redAccent,
+                    ),
+                    const SizedBox(width: 8),
+                    _buildMiniStat(
+                      "Avg Load",
+                      "${avgLoad.toStringAsFixed(1)}kW",
+                      Colors.orangeAccent,
+                    ),
+                    const SizedBox(width: 8),
+                    _buildMiniStat(
+                      "Status",
+                      meterStatus,
+                      Colors.greenAccent,
+                    ),
                   ],
                 ),
 
-                const SizedBox(height: 30),
-                const Text(
-                  "Recent Incident Logs", 
-                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)
-                ),
-                const SizedBox(height: 15),
-                
-                Expanded(
-                  child: totalEvents == 0 
-                    ? const Center(child: Text("No history logs found.", style: TextStyle(color: Colors.white38)))
-                    : ListView.builder(
-                        physics: const BouncingScrollPhysics(),
-                        itemCount: totalEvents,
-                        itemBuilder: (context, index) {
-                          var log = docs[index].data() as Map<String, dynamic>;
-                          
-                          String formattedTime = "N/A";
-                          if (log['time'] != null && log['time'] is Timestamp) {
-                            DateTime dt = (log['time'] as Timestamp).toDate();
-                            String hour = dt.hour > 12 ? (dt.hour - 12).toString() : dt.hour.toString();
-                            if(hour == "0") hour = "12";
-                            formattedTime = "${dt.day} April, $hour:${dt.minute.toString().padLeft(2, '0')} ${dt.hour >= 12 ? 'PM' : 'AM'}";
-                          }
 
-                          return _buildIncidentTile(
-                            log['title'] ?? "Incident", 
-                            formattedTime, 
-                            log['desc'] ?? "",
-                            log['isCritical'] ?? false,
-                          );
-                        },
-                      ),
+
+                const SizedBox(height: 20),
+                const Text(
+                  "Recent Incident Logs",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // ── Logs list ─────────────────────────────
+                Expanded(
+                  child: totalEvents == 0
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment:
+                                MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.history_rounded,
+                                color: Colors.white
+                                    .withOpacity(0.12),
+                                size: 44,
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                "No logs yet",
+                                style: GoogleFonts.orbitron(
+                                  color: Colors.white
+                                      .withOpacity(0.20),
+                                  fontSize: 11,
+                                  letterSpacing: 1.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          physics:
+                              const BouncingScrollPhysics(),
+                          itemCount: totalEvents,
+                          itemBuilder: (context, index) {
+                            final log = docs[index].data()
+                                as Map<String, dynamic>;
+                            final isCritical =
+                                log['isCritical'] ?? false;
+                            final status =
+                                log['status'] ?? 'Normal';
+                            final confidence =
+                                log['ml_confidence'] ?? 0;
+                            final timeStr =
+                                _formatTime(log['time']);
+
+                            return _buildIncidentTile(
+                              title:      log['title'] ?? "Incident",
+                              time:       timeStr,
+                              desc:       log['desc'] ?? "",
+                              isCritical: isCritical,
+                              status:     status,
+                              confidence: confidence,
+                            );
+                          },
+                        ),
                 ),
               ],
             );
@@ -116,29 +204,49 @@ class MeterAnalyticsHistory extends StatelessWidget {
     );
   }
 
-  // UI Components
+  // ── Meter Header ──────────────────────────────────────
   Widget _buildMeterHeader(String id, String loc) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [Colors.redAccent.withOpacity(0.15), Colors.transparent]),
+        gradient: LinearGradient(
+          colors: [
+            Colors.redAccent.withOpacity(0.15),
+            Colors.transparent,
+          ],
+        ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
+        border:
+            Border.all(color: Colors.redAccent.withOpacity(0.3)),
       ),
       child: Row(
         children: [
           const CircleAvatar(
             radius: 25,
             backgroundColor: Colors.redAccent,
-            child: Icon(Icons.history_toggle_off, color: Colors.white, size: 30),
+            child: Icon(Icons.history_toggle_off,
+                color: Colors.white, size: 28),
           ),
           const SizedBox(width: 15),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(id, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                Text(loc, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                Text(
+                  id,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  loc,
+                  style: const TextStyle(
+                    color: Colors.white54,
+                    fontSize: 12,
+                  ),
+                ),
               ],
             ),
           ),
@@ -147,55 +255,148 @@ class MeterAnalyticsHistory extends StatelessWidget {
     );
   }
 
-  Widget _buildMiniStat(String label, String value, Color color) {
-    return Container(
-      width: 100, padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(color: Colors.white.withOpacity(0.03), borderRadius: BorderRadius.circular(15)),
-      child: Column(children: [
-        Text(value, style: TextStyle(color: color, fontSize: 16, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 4),
-        Text(label, style: const TextStyle(color: Colors.white38, fontSize: 10)),
-      ]),
+  // ── Mini Stat ─────────────────────────────────────────
+  Widget _buildMiniStat(String label, String value,
+      Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.03),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Column(
+          children: [
+            Text(
+              value,
+              style: TextStyle(
+                color: color,
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white38,
+                fontSize: 9,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _buildIncidentTile(String title, String time, String desc, bool isCritical) {
+  // ── Incident Tile ─────────────────────────────────────
+  Widget _buildIncidentTile({
+    required String title,
+    required String time,
+    required String desc,
+    required bool   isCritical,
+    required String status,
+    required int    confidence,
+  }) {
+    // Color + icon based on status
+    Color    tileColor;
+    IconData tileIcon;
+
+    switch (status) {
+      case 'Theft':
+        tileColor = Colors.redAccent;
+        tileIcon  = Icons.warning_rounded;
+        break;
+      case 'Fault':
+        tileColor = Colors.orangeAccent;
+        tileIcon  = Icons.build_circle_outlined;
+        break;
+      default:
+        tileColor = const Color(0xFF00E5FF);
+        tileIcon  = Icons.info_outline;
+    }
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(15),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.03),
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(
+          color: isCritical
+              ? Colors.redAccent.withOpacity(0.25)
+              : Colors.white.withOpacity(0.05),
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            isCritical ? Icons.warning_rounded : Icons.info_outline,
-            color: isCritical ? Colors.redAccent : const Color(0xFF00E5FF),
-          ),
-          const SizedBox(width: 15),
+          // Status icon
+          Icon(tileIcon, color: tileColor, size: 20),
+          const SizedBox(width: 12),
+
+          // Content
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Title + time
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Flexible(
                       child: Text(
                         title,
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Text(time, style: const TextStyle(color: Colors.white30, fontSize: 10)),
+                    Text(
+                      time,
+                      style: const TextStyle(
+                        color: Colors.white30,
+                        fontSize: 10,
+                      ),
+                    ),
                   ],
                 ),
-                const SizedBox(height: 5),
-                Text(desc, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                const SizedBox(height: 4),
+
+                // Description
+                Text(
+                  desc,
+                  style: const TextStyle(
+                    color: Colors.white54,
+                    fontSize: 11,
+                  ),
+                ),
+
+                // ✅ ML Confidence badge (only if > 0)
+                if (confidence > 0 && status != 'Normal') ...[
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.psychology_outlined,
+                        color: tileColor.withOpacity(0.7),
+                        size: 11,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        "ML Confidence: $confidence%",
+                        style: TextStyle(
+                          color: tileColor.withOpacity(0.7),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),

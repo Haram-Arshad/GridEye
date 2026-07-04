@@ -248,6 +248,69 @@ class _ConsumerPortalState extends State<ConsumerPortal> {
     );
   }
 
+  // ── Resolved Confirmation Dialog ──────────────────────
+  // Shown when consumer taps the tile while it's in "Resolved" state.
+  // Tapping OK acknowledges the fault doc — tile then reverts to its
+  // normal "Report Power Fault" state automatically via the stream.
+  void _showResolvedDialog(BuildContext context, String faultDocId) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1B263B),
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            const Icon(Icons.check_circle_rounded,
+                color: Color(0xFF69F0AE), size: 22),
+            const SizedBox(width: 10),
+            Text(
+              "Issue Resolved",
+              style: GoogleFonts.orbitron(
+                  color: const Color(0xFF69F0AE), fontSize: 16),
+            ),
+          ],
+        ),
+        content: const Text(
+          "Your reported issue has been resolved by the GridEye Admin "
+          "team. If you continue to experience problems, please submit "
+          "a new report.",
+          style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+        ),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF69F0AE),
+                foregroundColor: Colors.black,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+              ),
+              onPressed: () async {
+                Navigator.pop(context);
+                try {
+                  await FirebaseFirestore.instance
+                      .collection('Faults')
+                      .doc(faultDocId)
+                      .update({'consumerAck': true});
+                } catch (e) {
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Couldn't update: $e")),
+                  );
+                }
+              },
+              child: const Text("OK",
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // Helpers 
   String _formatTimestamp(dynamic ts) {
     if (ts == null || ts is! Timestamp) return "—";
@@ -366,18 +429,36 @@ class _ConsumerPortalState extends State<ConsumerPortal> {
             });
           }
 
+          // Single combined stream — watches both Pending and Resolved
+          // (unacknowledged) faults for this meter, so the action tile
+          // can move through: Report → Processing → Resolved → Report
           return StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
                 .collection('Faults')
                 .where('meterID', isEqualTo: mID)
-                .where('status', isEqualTo: 'Pending')
+                .where('status', whereIn: ['Pending', 'Resolved'])
                 .snapshots(),
             builder: (context, faultSnapshot) {
 
-              // Alert tile logic
-              bool isPending = faultSnapshot.hasData &&
-                  faultSnapshot.data!.docs.isNotEmpty;
+              final faultDocs = faultSnapshot.data?.docs ?? [];
 
+              final pendingDocs = faultDocs.where((doc) {
+                final data = doc.data() as Map<String, dynamic>;
+                return data['status'] == 'Pending';
+              }).toList();
+
+              final resolvedUnackedDocs = faultDocs.where((doc) {
+                final data = doc.data() as Map<String, dynamic>;
+                return data['status'] == 'Resolved' &&
+                    data['consumerAck'] != true;
+              }).toList();
+
+              bool isPending = pendingDocs.isNotEmpty;
+              bool isResolved = resolvedUnackedDocs.isNotEmpty;
+              final resolvedDoc =
+                  isResolved ? resolvedUnackedDocs.first : null;
+
+              // Alert tile logic
               Color    accentColor = const Color(0xFF00E5FF);
               String   alertTitle  = "REPORT POWER FAULT";
               String   alertSub    = "Inform Admin about outages";
@@ -388,6 +469,11 @@ class _ConsumerPortalState extends State<ConsumerPortal> {
                 alertTitle  = "STATUS: PROCESSING";
                 alertSub    = "Report is live. Waiting for Admin...";
                 alertIcon   = Icons.sync_rounded;
+              } else if (isResolved) {
+                accentColor = const Color(0xFF69F0AE);
+                alertTitle  = "STATUS: RESOLVED";
+                alertSub    = "Tap to view details";
+                alertIcon   = Icons.check_circle_outline_rounded;
               } else if (currentLoad == 0.0) {
                 accentColor = const Color(0xFFFF5252);
                 alertTitle  = "CRITICAL: NO LOAD";
@@ -398,6 +484,18 @@ class _ConsumerPortalState extends State<ConsumerPortal> {
                 alertTitle  = "SYSTEM: HIGH LOAD";
                 alertSub    = "High energy usage detected.";
                 alertIcon   = Icons.bolt;
+              }
+
+              VoidCallback tileOnTap;
+              if (isPending) {
+                tileOnTap = () => ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Processing report...")));
+              } else if (isResolved) {
+                tileOnTap = () =>
+                    _showResolvedDialog(context, resolvedDoc!.id);
+              } else {
+                tileOnTap = () =>
+                    _showReportDialog(context, mID, alertTitle);
               }
 
               return SingleChildScrollView(
@@ -450,18 +548,14 @@ class _ConsumerPortalState extends State<ConsumerPortal> {
                     ),
                     const SizedBox(height: 12),
 
-                    // Fault report tile
+                    // Fault report tile — single source of truth for
+                    // Report / Processing / Resolved states
                     _AnimatedActionTile(
                       icon:        alertIcon,
                       title:       alertTitle,
                       subtitle:    alertSub,
                       accentColor: accentColor,
-                      onTap: isPending
-                          ? () => ScaffoldMessenger.of(context)
-                              .showSnackBar(const SnackBar(
-                                  content: Text("Processing report...")))
-                          : () => _showReportDialog(
-                              context, mID, alertTitle),
+                      onTap:       tileOnTap,
                     ),
                     const SizedBox(height: 10),
 

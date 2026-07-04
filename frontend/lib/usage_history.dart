@@ -78,35 +78,9 @@ class UsageHistory extends StatelessWidget {
               children: [
 
                 // ___AI Badge ___
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF00E5FF).withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: const Color(0xFF00E5FF).withOpacity(0.3),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.auto_awesome,
-                          color: Color(0xFF00E5FF), size: 13),
-                      const SizedBox(width: 6),
-                      Text(
-                        "AI ANALYZED — Random Forest Model",
-                        style: GoogleFonts.orbitron(
-                          color: const Color(0xFF00E5FF),
-                          fontSize: 9,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
 
-                const SizedBox(height: 20),
+
+                const SizedBox(height: 6),
                 const Text(
                   "Consumption Trend",
                   style: TextStyle(
