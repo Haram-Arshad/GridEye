@@ -13,7 +13,8 @@ import 'meter_id_input.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  runApp(GridEyeApp());
+  runApp(GridEyeApp());GoogleFonts.config.allowRuntimeFetching = false; 
+
 }
 
 class GridEyeApp extends StatelessWidget {
