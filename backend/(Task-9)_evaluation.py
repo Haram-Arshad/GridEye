@@ -79,7 +79,7 @@ def run_evaluation(model, scaler, X, y):
 
 def run_evaluation_pipeline(model_path: str, scaler_path: str, data_path: str):
     print("\n" + "=" * 50)
-    print("  GridEye — Model Evaluation Pipeline")
+    print("  GridEye — Model Evaluation Pipeline (XGBoost v5)")
     print("=" * 50 + "\n")
 
     model, scaler = load_model_and_scaler(model_path, scaler_path)
@@ -92,8 +92,11 @@ def run_evaluation_pipeline(model_path: str, scaler_path: str, data_path: str):
 
 
 if __name__ == "__main__":
-    MODEL_PATH  = r"E:\Ayesha's VS CODES\GridEye Codes\incremental_model.pkl"
-    SCALER_PATH = r"E:\Ayesha's VS CODES\GridEye Codes\scaler.pkl"
-    DATA_PATH   = r"E:\Ayesha's VS CODES\GridEye Codes\balanced_data_final.csv"
+    BASE_DIR    = os.path.dirname(os.path.abspath(__file__))
+
+    # ── UPDATED: ab naye XGBoost model/scaler/held-out set use ho rahe hain ──
+    MODEL_PATH  = os.path.join(BASE_DIR, "incremental_model_v5_xgb.pkl")
+    SCALER_PATH = os.path.join(BASE_DIR, "scaler_v5_xgb.pkl")
+    DATA_PATH   = os.path.join(BASE_DIR, "held_out_test_v5_xgb.csv")
 
     run_evaluation_pipeline(MODEL_PATH, SCALER_PATH, DATA_PATH)

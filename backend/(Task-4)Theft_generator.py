@@ -4,8 +4,13 @@ import os
 import sys
 
 
-INPUT_PATH  = r"E:\Ayesha's VS CODES\GridEye Codes\balanced_data_final.csv"
-OUTPUT_PATH = r"E:\Ayesha's VS CODES\GridEye Codes\augmented_dataset.csv"
+BASE_DIR    = os.path.dirname(os.path.abspath(__file__))
+
+# ── UPDATED: input is now the cleaned raw dataset (missing values fixed) ──
+INPUT_PATH  = os.path.join(BASE_DIR, "dataset_cleaned.csv")
+
+# ── SAFE: naya naam, purani augmented_dataset.csv untouched ──
+OUTPUT_PATH = os.path.join(BASE_DIR, "augmented_dataset_v2.csv")
 
 
 def load_dataset(file_path: str) -> pd.DataFrame:
@@ -94,7 +99,7 @@ def save_dataset(df: pd.DataFrame, output_path: str):
 
 def run_theft_generation(input_path: str, output_path: str):
     print("\n" + "=" * 50)
-    print("  GridEye — Synthetic Theft Generation Pipeline")
+    print("  GridEye — Synthetic Theft Generation Pipeline (v2 — cleaned input)")
     print("=" * 50 + "\n")
 
     df        = load_dataset(input_path)
