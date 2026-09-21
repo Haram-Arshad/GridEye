@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
+import 'dart:typed_data';
 
 class MeterAnalyticsHistory extends StatelessWidget {
   final String meterId;
@@ -28,6 +34,137 @@ class MeterAnalyticsHistory extends StatelessWidget {
     final min  = dt.minute.toString().padLeft(2, '0');
     // ✅ FIX: dynamic month from datetime
     return "${dt.day} ${_months[dt.month]}, $h:$min $ampm";
+  }
+
+  // ── (NEW) Build the PDF document bytes — shared by Save & Share ──
+  Future<Uint8List> _buildPdfBytes(
+    List<QueryDocumentSnapshot> docs,
+    int totalEvents,
+    double avgLoad,
+    String meterStatus,
+  ) async {
+    final pdfDoc = pw.Document();
+
+    final rows = docs.map((doc) {
+      final d = doc.data() as Map<String, dynamic>;
+      final confidence = d['ml_confidence'] ?? 0;
+      return [
+        _formatTime(d['time']),
+        (d['title'] ?? 'Incident').toString(),
+        (d['status'] ?? 'Normal').toString(),
+        confidence > 0 ? '$confidence%' : '-',
+        (d['desc'] ?? '').toString(),
+      ];
+    }).toList();
+
+    pdfDoc.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        build: (pw.Context ctx) => [
+          pw.Header(
+            level: 0,
+            child: pw.Text(
+              'GridEye Incident Report',
+              style: pw.TextStyle(
+                  fontSize: 20, fontWeight: pw.FontWeight.bold),
+            ),
+          ),
+          pw.SizedBox(height: 8),
+          pw.Text('Meter ID: $meterId'),
+          pw.Text('Location: $address'),
+          pw.Text(
+              'Generated: ${DateTime.now().toString().split('.').first}'),
+          pw.SizedBox(height: 16),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text('Total Events: $totalEvents'),
+              pw.Text('Avg Load: ${avgLoad.toStringAsFixed(1)} kW'),
+              pw.Text('Status: $meterStatus'),
+            ],
+          ),
+          pw.SizedBox(height: 16),
+          pw.TableHelper.fromTextArray(
+            headers: ['Time', 'Title', 'Status', 'Confidence', 'Description'],
+            data: rows,
+            headerStyle:
+                pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
+            cellStyle: const pw.TextStyle(fontSize: 9),
+            cellAlignment: pw.Alignment.centerLeft,
+            columnWidths: {
+              0: const pw.FlexColumnWidth(1.4),
+              1: const pw.FlexColumnWidth(1.6),
+              2: const pw.FlexColumnWidth(1),
+              3: const pw.FlexColumnWidth(1.1),
+              4: const pw.FlexColumnWidth(2.5),
+            },
+          ),
+        ],
+      ),
+    );
+
+    return pdfDoc.save();
+  }
+
+  // ── (NEW) Share the PDF via the OS share sheet ──────────
+  Future<void> _sharePdf(
+    BuildContext context,
+    List<QueryDocumentSnapshot> docs,
+    int totalEvents,
+    double avgLoad,
+    String meterStatus,
+  ) async {
+    try {
+      final bytes =
+          await _buildPdfBytes(docs, totalEvents, avgLoad, meterStatus);
+      await Printing.sharePdf(
+        bytes: bytes,
+        filename: 'GridEye_Incident_Report_$meterId.pdf',
+      );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('PDF share failed: $e')),
+        );
+      }
+    }
+  }
+
+  // ── (NEW) Save the PDF directly to device storage ───────
+  Future<void> _savePdf(
+    BuildContext context,
+    List<QueryDocumentSnapshot> docs,
+    int totalEvents,
+    double avgLoad,
+    String meterStatus,
+  ) async {
+    try {
+      final bytes =
+          await _buildPdfBytes(docs, totalEvents, avgLoad, meterStatus);
+
+      // App's own document storage — no runtime permission needed,
+      // works the same on Android and iOS.
+      final dir = await getApplicationDocumentsDirectory();
+      final fileName =
+          'GridEye_Incident_Report_${meterId}_${DateTime.now().millisecondsSinceEpoch}.pdf';
+      final file = File('${dir.path}/$fileName');
+      await file.writeAsBytes(bytes);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Saved: ${file.path}'),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('PDF save failed: $e')),
+        );
+      }
+    }
   }
 
   @override
@@ -130,6 +267,74 @@ class MeterAnalyticsHistory extends StatelessWidget {
                 ),
 
 
+
+                const SizedBox(height: 14),
+                // ── (NEW) Save / Share PDF buttons ──────────
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => _savePdf(
+                          context,
+                          docs,
+                          totalEvents,
+                          avgLoad,
+                          meterStatus,
+                        ),
+                        icon: const Icon(Icons.download_rounded,
+                            color: Color(0xFF00E5FF), size: 18),
+                        label: const Text(
+                          "Save Report",
+                          style: TextStyle(
+                            color: Color(0xFF00E5FF),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(
+                              color: Color(0xFF00E5FF), width: 1),
+                          padding:
+                              const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => _sharePdf(
+                          context,
+                          docs,
+                          totalEvents,
+                          avgLoad,
+                          meterStatus,
+                        ),
+                        icon: const Icon(Icons.ios_share_rounded,
+                            color: Color(0xFF00E5FF), size: 18),
+                        label: const Text(
+                          "Share Report",
+                          style: TextStyle(
+                            color: Color(0xFF00E5FF),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(
+                              color: Color(0xFF00E5FF), width: 1),
+                          padding:
+                              const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
 
                 const SizedBox(height: 20),
                 const Text(
