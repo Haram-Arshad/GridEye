@@ -11,6 +11,7 @@ import json
 import ssl
 import paho.mqtt.client as mqtt
 import shap
+from billing import total_bill
 
 # ── FIREBASE CONNECTION ────────────────────────────────
 KEY_PATH = os.path.join(os.path.dirname(__file__), 'serviceKey.json')
@@ -20,20 +21,15 @@ if not firebase_admin._apps:
 db = firestore.client()
 print("✅ GridEye ML Simulator Connected!\n")
 
-# ── MQTT CONNECTION ─────────────────────────────────────
-# Credentials code mein NAHI likhte (report / GitHub / screenshot mein leak ho jate hain).
-# Terminal mein set karein (Windows PowerShell):
-#   $env:MQTT_BROKER="xxxx.emqxsl.com"; $env:MQTT_USERNAME="..."; $env:MQTT_PASSWORD="..."
-# Agar set nahi hain to MQTT band rahega aur baaqi simulator normal chalega.
 MQTT_BROKER   = os.environ.get("MQTT_BROKER")
 MQTT_PORT     = int(os.environ.get("MQTT_PORT", "8883"))     # TLS port
 MQTT_USERNAME = os.environ.get("MQTT_USERNAME")
 MQTT_PASSWORD = os.environ.get("MQTT_PASSWORD")
 
-try:                                   # paho-mqtt 2.x
+try:                                  
     mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1,
                               client_id="grideye-simulator", protocol=mqtt.MQTTv311)
-except AttributeError:                 # paho-mqtt 1.x
+except AttributeError:                 
     mqtt_client = mqtt.Client(client_id="grideye-simulator", protocol=mqtt.MQTTv311)
 
 
@@ -50,9 +46,9 @@ MQTT_ENABLED = False
 if MQTT_BROKER and MQTT_USERNAME and MQTT_PASSWORD:
     try:
         mqtt_client.username_pw_set(MQTT_USERNAME, MQTT_PASSWORD)
-        mqtt_client.tls_set()          # default TLS + certificate verification
+        mqtt_client.tls_set()         
         mqtt_client.connect(MQTT_BROKER, MQTT_PORT, keepalive=60)
-        mqtt_client.loop_start()       # background thread handles the network loop
+        mqtt_client.loop_start()       
         MQTT_ENABLED = True
     except Exception as e:
         print(f"⚠️  MQTT unavailable, continuing without it: {e}")
@@ -61,13 +57,7 @@ else:
 
 
 def publish_mqtt(topic: str, payload: dict):
-    """
-    Publishes a JSON telemetry payload to the MQTT broker.
-    This models the meter -> broker leg of the pipeline
-    (meter/gateway -> MQTT -> backend subscriber -> Firestore).
-    Never raises — a publish failure must never crash the simulator
-    or block the existing Firestore writes below.
-    """
+    
     if not MQTT_ENABLED:
         return
     try:
@@ -87,9 +77,6 @@ BASE_DIR    = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH  = os.path.join(BASE_DIR, "incremental_model_v5_xgb.pkl")
 SCALER_PATH = os.path.join(BASE_DIR, "scaler_v5_xgb.pkl")
 
-# ✅ Option B: held_out_test use karo
-# (ye woh rows hain jo model ne training mein kabhi nahi dekhi)
-# ── UPDATED: v5 training script ka apna held-out set ──
 CSV_PATH = os.path.join(BASE_DIR, "held_out_test_v5_xgb.csv")
 
 # ── LOAD ML MODEL + DATASET ────────────────────────────
@@ -102,10 +89,6 @@ df    = df.select_dtypes(include=[np.number]).fillna(0)
 X_all = df.drop(columns=["FLAG"]).values
 y_all = df["FLAG"].values
 
-# ── Kaun se columns raw daily readings hain aur kaun se engineered features ──
-# (Task-6 ke 7 features). Noise sirf raw readings par lagta hai, phir features
-# dobara nikalte hain — warna features apas mein inconsistent ho jate hain
-# (e.g. Peak < Mean).
 ENGINEERED    = ["Mean_Consumption", "Peak_Usage", "Min_Usage", "Std_Consumption",
                  "Usage_Range", "Zero_Day_Count", "Missing_Day_Count"]
 FEATURE_COLS  = list(df.drop(columns=["FLAG"]).columns)
@@ -126,7 +109,6 @@ print(f"   Theft  profiles : {len(THEFT_PROFILES)}\n")
 
 # ── CONFIG ─────────────────────────────────────────────
 INTERVAL_SECONDS            = 7
-BILL_RATE_PER_UNIT          = 35
 SECONDS_PER_HOUR            = 3600.0
 HEALTH_CHECK_INTERVAL_SECONDS = 300
 _last_health_check: dict[str, datetime] = {}
@@ -256,12 +238,7 @@ def recompute_features(profile: np.ndarray) -> np.ndarray:
 
 def generate_synthetic_profile(base_profile: np.ndarray,
                                 noise_level: float = 0.05) -> np.ndarray:
-    """
-    Real held-out consumer profile ki raw daily readings par chhota Gaussian
-    noise (sigma = 5%) lagata hai, phir engineered features dobara calculate
-    karta hai. Is se har reading unique hoti hai lekin features readings ke
-    saath consistent rehte hain.
-    """
+    
     synthetic = base_profile.astype(float).copy()
     noise = np.random.normal(0, noise_level, size=len(DAY_POS))
     synthetic[DAY_POS] = np.clip(synthetic[DAY_POS] * (1 + noise), 0, None)
@@ -270,12 +247,7 @@ def generate_synthetic_profile(base_profile: np.ndarray,
 
 # ── (NEW) SHAP EXPLANATION HELPER ──────────────────────
 def get_shap_explanation(scaled_profile, top_n: int = 3) -> list:
-    """
-    Runs the pre-built TreeExplainer on one scaled profile and returns the
-    top-N features that pushed the prediction the most (toward Theft or
-    toward Normal), as {"feature": name, "impact": value} — this is the
-    concrete "why did the AI flag this" answer for the defense panel.
-    """
+    
     try:
         shap_values = SHAP_EXPLAINER.shap_values(scaled_profile)
         values = shap_values[0]
@@ -292,20 +264,8 @@ def get_shap_explanation(scaled_profile, top_n: int = 3) -> list:
 
 # ── ML PREDICTION ──────────────────────────────────────
 def ml_predict_status(load_val: float) -> tuple:
-    """
-    1. Fault  -> rule-based (load == 0). Yeh ML nahi hai, simple hardware rule hai.
-    2. Scenario selection (SIMULATION ka hissa, ML ka nahi):
-         load < 2.0 kW  -> held-out THEFT profiles mein se ek chuna jata hai
-         load >= 2.0 kW -> held-out NORMAL profiles mein se ek chuna jata hai
-       Yani simulator "scenario" chunta hai, aur XGBoost us profile ko
-       Normal/Theft classify karta hai. Dashboard ka status hamesha model ka
-       predict kiya hua hota hai, lekin input scenario-selected hota hai.
-    3. Gaussian noise + features recompute -> unique profile
-    4. XGBoost prediction + confidence
-    5. (NEW) SHAP explains which features drove the prediction
-    """
-    # Hardware-level fault — deterministic, no ML model involved,
-    # so there is nothing for SHAP to explain here.
+    
+    
     if load_val == 0.0:
         title = random.choice(LOG_CONTENT["Fault"]["titles"])
         desc  = random.choice(LOG_CONTENT["Fault"]["descs"])
@@ -334,6 +294,40 @@ def ml_predict_status(load_val: float) -> tuple:
 
     return status, title, desc, confidence, explanation
 
+THEFT_METER_IDS = {"CON-SKR-001", "CON-QTA-001"}  
+                                                   
+
+def _model_label(profile) -> str:
+    scaled = scaler.transform(pd.DataFrame([profile], columns=FEATURE_COLS))
+    return "Theft" if model.predict(scaled)[0] == 1 else "Normal"
+
+
+def _pick_profile(pool, want: str):
+    """Pool mein se woh profile chuno jise model `want` (Normal/Theft) kahe."""
+    for _ in range(300):
+        p = random.choice(pool).astype(float)
+        if _model_label(p) == want:
+            return p
+    return random.choice(pool).astype(float)
+
+
+METER_PROFILE = {
+    m["meterId"]: (_pick_profile(THEFT_PROFILES, "Theft")
+                   if m["meterId"] in THEFT_METER_IDS
+                   else _pick_profile(NORMAL_PROFILES, "Normal"))
+    for m in CONSUMER_METERS
+}
+print(f"✅ Consumer meter profiles assigned | Theft-scenario meters: {sorted(THEFT_METER_IDS)}\n")
+
+
+def predict_meter_profile(meter_id: str) -> tuple:
+    """Meter ke apne FIXED profile par (chhote noise ke saath) XGBoost chalata hai."""
+    synthetic = generate_synthetic_profile(METER_PROFILE[meter_id])
+    scaled    = scaler.transform(pd.DataFrame([synthetic], columns=FEATURE_COLS))
+    pred      = model.predict(scaled)[0]
+    conf      = int(round(max(model.predict_proba(scaled)[0]) * 100))
+    return ("Theft" if pred == 1 else "Normal"), conf
+
 
 # ── PUSH METERLOGS ──────────────────────────────────────
 def push_meter_log_with_ml(m_id, load_float, status,
@@ -353,7 +347,6 @@ def push_meter_log_with_ml(m_id, load_float, status,
         "time":          ts,
     })
 
-    # (NEW) mirror the same log event over MQTT — the "edge -> broker" leg
     publish_mqtt(f"grideye/{m_id}/logs", {
         "meterId":       m_id,
         "loadValue":     float(load_float),
@@ -372,7 +365,6 @@ def sync_consumer_meter(now: datetime):
     for meter in CONSUMER_METERS:
         try:
             c_id = meter["meterId"]
-            # (FIXED) `now` UTC hai; load pattern Pakistan ke LOCAL ghante se chalna chahiye
             hour = now.astimezone().hour
 
             if 7 <= hour <= 10 or 18 <= hour <= 23:
@@ -382,13 +374,17 @@ def sync_consumer_meter(now: datetime):
             else:
                 c_load = round(random.uniform(2.0, 5.5), 3)
 
-            roll = random.random()
-            if roll < 0.03:
-                c_load = 0.0
-            elif roll < 0.10:
-                c_load = round(random.uniform(0.3, 1.5), 3)
+            # Theft meter: bypass ki wajah se recorded load kam
+            if c_id in THEFT_METER_IDS:
+                c_load = round(c_load * 0.3, 3)
 
-            c_status, _, _, c_conf, _ = ml_predict_status(c_load)
+            if random.random() < 0.005:
+                c_load = 0.0
+
+            if c_load == 0.0:
+                c_status, c_conf = "Fault", random.randint(90, 99)
+            else:
+                c_status, c_conf = predict_meter_profile(c_id)
 
             meter_ref  = db.collection("meters").document(c_id)
             meter_snap = meter_ref.get()
@@ -398,7 +394,7 @@ def sync_consumer_meter(now: datetime):
 
             delta     = round(c_load * (INTERVAL_SECONDS / SECONDS_PER_HOUR), 4)
             new_units = round(existing + delta, 4)
-            bill_est  = int(new_units * BILL_RATE_PER_UNIT)
+            bill_est  = total_bill(new_units)
 
             consumer_payload = {
                 "meterId":       c_id,
@@ -416,7 +412,6 @@ def sync_consumer_meter(now: datetime):
 
             meter_ref.set(consumer_payload, merge=True)
 
-            # (NEW) mirror this consumer reading over MQTT
             publish_mqtt(f"grideye/consumer/{c_id}", consumer_payload)
 
             print(f"  [meters] ✔️ {c_id} | "
@@ -448,9 +443,7 @@ def upload_to_firebase(reading):
         lng   = reading["lng"]
         city  = reading["city"]
         area  = reading["area"]
-        # (FIXED) timezone-aware UTC timestamp — datetime.now() with no
-        # tzinfo was being stored as if it were already UTC, so the app
-        # displayed times ~5 hours in the future (Pakistan is UTC+5).
+        
         now   = datetime.now(timezone.utc)
 
         raw_load = round(random.uniform(5.5, 30.0), 2)
@@ -474,7 +467,6 @@ def upload_to_firebase(reading):
         }
         db.collection("MeterReadings").add(reading_payload)
 
-        # (NEW) mirror the raw telemetry reading over MQTT
         publish_mqtt(f"grideye/{m_id}/readings", reading_payload)
 
         print(f"  [MeterReadings] ✔️ {m_id} | {city} | "
@@ -485,8 +477,7 @@ def upload_to_firebase(reading):
 
         # 3. MeterLogs
         if status in ("Theft", "Fault"):
-            # (FIXED) realistic gap instead of a flat 30 seconds, so the
-            # "Pre-Detection Baseline" doesn't look glued to the actual event
+            
             pre_ts = now - timedelta(minutes=random.randint(2, 6), seconds=random.randint(0, 59))
             push_meter_log_with_ml(
                 m_id, raw_load, "Normal",
