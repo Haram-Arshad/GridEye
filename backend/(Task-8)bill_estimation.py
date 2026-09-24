@@ -1,9 +1,5 @@
 from datetime import datetime
-
-
-RATE_PER_UNIT   = 50.0
-TAX_PERCENTAGE  = 17.0
-FIXED_CHARGES   = 150.0
+from billing import RATE_PER_UNIT, TAX_PERCENTAGE, FIXED_CHARGES   
 
 
 def calculate_bill(previous_reading: float, current_reading: float,
