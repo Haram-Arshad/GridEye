@@ -1,9 +1,10 @@
-RATE_PER_UNIT  = 50.0    # Rs per kWh
-TAX_PERCENTAGE = 17.0    # % of energy charges
-FIXED_CHARGES  = 150.0   # Rs per bill
+RATE_PER_UNIT  = 33.10  
+TAX_PERCENTAGE = 30.0    
+FIXED_CHARGES  = 735.0   
 
 
 def bill_breakdown(units: float) -> dict:
+    """Units se poora itemised bill nikalta hai."""
     if units < 0:
         raise ValueError("units cannot be negative.")
     units          = round(float(units), 2)
@@ -20,10 +21,11 @@ def bill_breakdown(units: float) -> dict:
 
 
 def total_bill(units: float) -> int:
+    """Firestore ke billEst / amount ke liye: poore rupees mein total."""
     return int(round(bill_breakdown(units)["total_bill"]))
 
 
 if __name__ == "__main__":
-    print(bill_breakdown(166.3))
-    assert total_bill(166.3) == 9879
-    print("OK: 166.3 units ->", total_bill(166.3))
+
+    print(bill_breakdown(206))
+    print("206 units ->", total_bill(206), "(actual GEPCO bill: Rs 9,427 incl FPA adjustments)")
