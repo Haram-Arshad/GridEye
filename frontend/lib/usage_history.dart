@@ -18,17 +18,17 @@ class UsageHistory extends StatelessWidget {
               color: Color(0xFF00E5FF), size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        title: ShaderMask(
-          shaderCallback: (bounds) => const LinearGradient(
-            colors: [Color(0xFF00E5FF), Color(0xFF008CAB)],
-          ).createShader(bounds),
-          child: Text(
-            "Usage History",
+        title: RichText(
+          text: TextSpan(
             style: GoogleFonts.orbitron(
-              fontSize: 18,
-              fontWeight: FontWeight.normal,
-              color: Colors.white,
+              fontSize: 17,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.8,
             ),
+            children: const [
+              TextSpan(text: "USAGE ", style: TextStyle(color: Colors.white)),
+              TextSpan(text: "HISTORY", style: TextStyle(color: Color(0xFF00E5FF))),
+            ],
           ),
         ),
       ),

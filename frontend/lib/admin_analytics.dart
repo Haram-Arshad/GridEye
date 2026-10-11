@@ -1,135 +1,83 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
-import 'package:path_provider/path_provider.dart';
-import 'dart:io';
 import 'dart:typed_data';
+import 'analytics_pdf_generator.dart';
+import 'analytics_report_screen.dart';
 
-class AdminAnalytics extends StatelessWidget {
+// ─────────────────────────────────────────────────────────────
+// ADMIN — SYSTEM ANALYTICS
+// AppBar export icon opens a professional PDF report (same
+// pattern as the consumer "My Bill" -> "Bill Report" flow), with
+// GridEye logo, Save/Print/Share built into the report screen —
+// no more inline Save/View/Share buttons on this page itself.
+// ─────────────────────────────────────────────────────────────
+class AdminAnalytics extends StatefulWidget {
   const AdminAnalytics({super.key});
 
-  // ── (NEW) Build the System Analytics report PDF bytes ──
-  Future<Uint8List> _buildPdfBytes({
-    required int efficiency,
-    required int lastMonthEff,
-    required int normalCount,
-    required int theftCount,
-    required int faultCount,
-    required int gridLoss,
-    required double revenue,
-    required int activeCases,
-  }) async {
-    final pdfDoc = pw.Document();
+  @override
+  State<AdminAnalytics> createState() => _AdminAnalyticsState();
+}
 
-    pdfDoc.addPage(
-      pw.MultiPage(
-        pageFormat: PdfPageFormat.a4,
-        build: (pw.Context ctx) => [
-          pw.Header(
-            level: 0,
-            child: pw.Text(
-              'GridEye System Analytics Report',
-              style: pw.TextStyle(
-                  fontSize: 20, fontWeight: pw.FontWeight.bold),
-            ),
-          ),
-          pw.SizedBox(height: 8),
-          pw.Text(
-              'Generated: ${DateTime.now().toString().split('.').first}'),
-          pw.SizedBox(height: 16),
-          pw.Text('Overall Recovery Rate',
-              style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 13)),
-          pw.SizedBox(height: 4),
-          pw.Text('This Month: $efficiency%   |   Last Month: $lastMonthEff%'),
-          pw.SizedBox(height: 16),
-          pw.Text('Meter Breakdown',
-              style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 13)),
-          pw.SizedBox(height: 4),
-          pw.TableHelper.fromTextArray(
-            headers: ['Normal', 'Theft', 'Fault'],
-            data: [
-              [normalCount.toString(), theftCount.toString(), faultCount.toString()],
-            ],
-            headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
-            cellStyle: const pw.TextStyle(fontSize: 10),
-            cellAlignment: pw.Alignment.center,
-          ),
-          pw.SizedBox(height: 16),
-          pw.Text('System Metrics',
-              style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 13)),
-          pw.SizedBox(height: 4),
-          pw.Bullet(text: 'Total Grid Loss: ${gridLoss.abs()} units'),
-          pw.Bullet(text: 'Revenue Recovered: Rs. ${revenue.toStringAsFixed(0)}'),
-          pw.Bullet(text: 'Active Investigations: $activeCases cases'),
-        ],
+class _AdminAnalyticsState extends State<AdminAnalytics> {
+  // Latest computed metrics, kept in sync on every build so the
+  // AppBar's export action (which sits outside the StreamBuilder
+  // tree) can read the current values when tapped.
+  int _efficiency = 0;
+  int _lastMonthEff = 62;
+  int _normalCount = 0;
+  int _theftCount = 0;
+  int _faultCount = 0;
+  int _gridLoss = 0;
+  double _revenue = 0;
+  int _activeCases = 0;
+
+  Future<void> _openReport(BuildContext context) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(
+        child: CircularProgressIndicator(color: Color(0xFF00E5FF)),
       ),
     );
 
-    return pdfDoc.save();
-  }
-
-  // ── (NEW) Save the PDF directly to device storage ───────
-  Future<void> _savePdf(BuildContext context,
-      {required Future<Uint8List> Function() buildBytes}) async {
     try {
-      final bytes = await buildBytes();
-      final dir = await getApplicationDocumentsDirectory();
-      final fileName =
-          'GridEye_System_Analytics_${DateTime.now().millisecondsSinceEpoch}.pdf';
-      final file = File('${dir.path}/$fileName');
-      await file.writeAsBytes(bytes);
+      Uint8List? logoBytes;
+      try {
+        final logoData = await rootBundle.load('assets/icon/icon.png');
+        logoBytes = logoData.buffer.asUint8List();
+      } catch (_) {
+        logoBytes = null; // report still generates fine without the logo
+      }
 
+      final data = AnalyticsPdfData(
+        efficiency: _efficiency,
+        lastMonthEff: _lastMonthEff,
+        normalCount: _normalCount,
+        theftCount: _theftCount,
+        faultCount: _faultCount,
+        gridLoss: _gridLoss,
+        revenue: _revenue,
+        activeCases: _activeCases,
+        generatedAt: DateTime.now(),
+      );
+
+      if (context.mounted) Navigator.pop(context); // close loading
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Saved: ${file.path}'),
-            duration: const Duration(seconds: 4),
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) =>
+                AnalyticsReportScreen(data: data, logoBytes: logoBytes),
           ),
         );
       }
     } catch (e) {
+      if (context.mounted) Navigator.pop(context);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('PDF save failed: $e')),
-        );
-      }
-    }
-  }
-
-  // ── (NEW) Share the PDF via the OS share sheet ──────────
-  Future<void> _sharePdf(BuildContext context,
-      {required Future<Uint8List> Function() buildBytes}) async {
-    try {
-      final bytes = await buildBytes();
-      await Printing.sharePdf(
-        bytes: bytes,
-        filename: 'GridEye_System_Analytics_Report.pdf',
-      );
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('PDF share failed: $e')),
-        );
-      }
-    }
-  }
-
-  // ── (NEW) View the PDF in the native preview screen ─────
-  Future<void> _viewPdf(BuildContext context,
-      {required Future<Uint8List> Function() buildBytes}) async {
-    try {
-      final bytes = await buildBytes();
-      await Printing.layoutPdf(
-        onLayout: (PdfPageFormat format) async => bytes,
-        name: 'GridEye_System_Analytics_Report.pdf',
-      );
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('PDF preview failed: $e')),
+          SnackBar(content: Text("Couldn't generate report: $e")),
         );
       }
     }
@@ -147,11 +95,28 @@ class AdminAnalytics extends StatelessWidget {
               color: Color(0xFF00E5FF), size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
-          "System Analytics",
-          style: GoogleFonts.orbitron(
-              fontSize: 16, color: Colors.white),
+        title: RichText(
+          text: TextSpan(
+            style: GoogleFonts.orbitron(
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.6,
+            ),
+            children: const [
+              TextSpan(text: "SYSTEM ", style: TextStyle(color: Colors.white)),
+              TextSpan(
+                  text: "ANALYTICS",
+                  style: TextStyle(color: Color(0xFF00E5FF))),
+            ],
+          ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.ios_share_rounded,
+                color: Color(0xFF00E5FF), size: 20),
+            onPressed: () => _openReport(context),
+          ),
+        ],
       ),
       body: StreamBuilder<QuerySnapshot>(
         // ── LIVE: MeterReadings se efficiency + gridLoss ──
@@ -263,6 +228,17 @@ class AdminAnalytics extends StatelessWidget {
                         lastMonthEff =
                             s['lastMonthEff'] ?? 62;
                       }
+
+                      // ── keep latest metrics in sync for the
+                      // AppBar export action (see class fields) ──
+                      _efficiency   = efficiency;
+                      _lastMonthEff = lastMonthEff;
+                      _normalCount  = normalCount;
+                      _theftCount   = theftCount;
+                      _faultCount   = faultCount;
+                      _gridLoss     = gridLoss;
+                      _revenue      = revenue;
+                      _activeCases  = activeCases;
 
                       return SingleChildScrollView(
                         padding: const EdgeInsets.all(20),
@@ -384,115 +360,6 @@ class AdminAnalytics extends StatelessWidget {
                                   ),
                                 ],
                               ),
-                            ),
-
-                            const SizedBox(height: 30),
-
-                            // ── (NEW) Save / View / Share report ──
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: OutlinedButton.icon(
-                                    onPressed: () => _savePdf(
-                                      context,
-                                      buildBytes: () => _buildPdfBytes(
-                                        efficiency: efficiency,
-                                        lastMonthEff: lastMonthEff,
-                                        normalCount: normalCount,
-                                        theftCount: theftCount,
-                                        faultCount: faultCount,
-                                        gridLoss: gridLoss,
-                                        revenue: revenue,
-                                        activeCases: activeCases,
-                                      ),
-                                    ),
-                                    icon: const Icon(Icons.download_rounded,
-                                        color: Color(0xFF00E5FF), size: 16),
-                                    label: const Text("Save",
-                                        style: TextStyle(
-                                            color: Color(0xFF00E5FF),
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w600)),
-                                    style: OutlinedButton.styleFrom(
-                                      side: const BorderSide(
-                                          color: Color(0xFF00E5FF), width: 1),
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 12),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(14),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: OutlinedButton.icon(
-                                    onPressed: () => _viewPdf(
-                                      context,
-                                      buildBytes: () => _buildPdfBytes(
-                                        efficiency: efficiency,
-                                        lastMonthEff: lastMonthEff,
-                                        normalCount: normalCount,
-                                        theftCount: theftCount,
-                                        faultCount: faultCount,
-                                        gridLoss: gridLoss,
-                                        revenue: revenue,
-                                        activeCases: activeCases,
-                                      ),
-                                    ),
-                                    icon: const Icon(Icons.visibility_outlined,
-                                        color: Color(0xFF00E5FF), size: 16),
-                                    label: const Text("View",
-                                        style: TextStyle(
-                                            color: Color(0xFF00E5FF),
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w600)),
-                                    style: OutlinedButton.styleFrom(
-                                      side: const BorderSide(
-                                          color: Color(0xFF00E5FF), width: 1),
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 12),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(14),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: OutlinedButton.icon(
-                                    onPressed: () => _sharePdf(
-                                      context,
-                                      buildBytes: () => _buildPdfBytes(
-                                        efficiency: efficiency,
-                                        lastMonthEff: lastMonthEff,
-                                        normalCount: normalCount,
-                                        theftCount: theftCount,
-                                        faultCount: faultCount,
-                                        gridLoss: gridLoss,
-                                        revenue: revenue,
-                                        activeCases: activeCases,
-                                      ),
-                                    ),
-                                    icon: const Icon(Icons.ios_share_rounded,
-                                        color: Color(0xFF00E5FF), size: 16),
-                                    label: const Text("Share",
-                                        style: TextStyle(
-                                            color: Color(0xFF00E5FF),
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w600)),
-                                    style: OutlinedButton.styleFrom(
-                                      side: const BorderSide(
-                                          color: Color(0xFF00E5FF), width: 1),
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 12),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(14),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
                             ),
 
                             const SizedBox(height: 30),
