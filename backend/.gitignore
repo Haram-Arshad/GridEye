@@ -1,3 +1,4 @@
 serviceKey.json
 __pycache__/
 .env
+mqtt_config.py
